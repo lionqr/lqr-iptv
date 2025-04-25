@@ -46,10 +46,12 @@ const Index = () => {
   }, [isFullScreen]);
 
   return (
-    <div className="min-h-screen bg-firetv-background text-white">
-      {!isFullScreen && <Header />}
+    <div className="min-h-screen bg-gradient-to-br from-blue-700 to-purple-700 text-white">
+      {!isFullScreen && (
+        <Header />
+      )}
       <div className={`${isFullScreen ? 'hidden' : 'grid'} grid-cols-12 h-[calc(100vh-64px)]`}>
-        <div className="col-span-2 border-r border-white/10">
+        <div className="col-span-3 border-r border-white/10">
           <CategorySidebar 
             categories={categories || []}
             activeCategory={activeCategory} 
@@ -57,7 +59,7 @@ const Index = () => {
             isLoading={dataLoading}
           />
         </div>
-        <div className="col-span-7 border-r border-white/10">
+        <div className="col-span-6 border-r border-white/10">
           <ChannelGrid 
             channels={filteredChannels} 
             onChannelSelect={handleChannelSelect} 

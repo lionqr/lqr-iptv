@@ -31,9 +31,9 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4">
+      <div className="grid grid-cols-1 gap-1 p-1">
         {Array(6).fill(0).map((_, i) => (
-          <Skeleton key={i} className="h-24 w-full rounded-lg" />
+          <Skeleton key={i} className="h-16 w-full" />
         ))}
       </div>
     );
@@ -50,27 +50,27 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
   }
 
   return (
-    <ScrollArea className="h-full w-full px-2 py-4">
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-2">
+    <ScrollArea className="h-full w-full scrollbar-none">
+      <div className="grid grid-cols-1 gap-1 p-1">
         {channels.map((channel) => (
           <button
             key={channel.id}
             onClick={() => handleChannelClick(channel)}
-            className={`w-full aspect-video flex flex-col items-center justify-center p-4 rounded-lg transition-all
+            className={`w-full flex items-center p-4 transition-colors
               ${activeChannelId === channel.id 
-                ? 'bg-firetv-accent ring-4 ring-firetv-highlight animate-pulse-soft' 
-                : 'bg-firetv-dark hover:bg-firetv-accent/40'}`}
+                ? 'bg-blue-600/50' 
+                : 'hover:bg-blue-600/30'}`}
           >
-            <div className="w-full h-full flex items-center justify-center">
+            <div className="h-10 w-10 rounded-full overflow-hidden mr-4">
               {channel.logo ? (
-                <img src={channel.logo} alt={channel.name} className="max-w-full max-h-full object-contain" />
+                <img src={channel.logo} alt={channel.name} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-10 h-10 flex items-center justify-center text-lg font-bold">
+                <div className="w-full h-full bg-blue-500 flex items-center justify-center">
                   {channel.name.charAt(0)}
                 </div>
               )}
             </div>
-            <div className="mt-2 font-medium truncate w-full text-center">{channel.name}</div>
+            <span className="font-medium">{channel.name}</span>
           </button>
         ))}
       </div>

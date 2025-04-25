@@ -28,20 +28,21 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
   };
 
   return (
-    <div className="bg-gradient-to-b from-blue-700/80 to-purple-700/80 h-full w-full">
+    <div className="bg-gradient-to-b from-blue-700 to-purple-700 h-full w-full">
       <div className="p-4 border-b border-white/10">
-        <div className="text-white text-lg font-bold">Categories</div>
+        <div className="text-white text-lg">Search Category</div>
       </div>
-      <ScrollArea className="h-[calc(100%-60px)]">
-        <div className="space-y-1 p-2">
+      <ScrollArea className="h-[calc(100%-60px)] scrollbar-none">
+        <div className="space-y-0 p-2">
           {isLoading ? (
             Array(8).fill(0).map((_, i) => (
-              <Skeleton key={i} className="h-10 w-full bg-white/10 rounded-md my-2" />
+              <Skeleton key={i} className="h-10 w-full bg-white/10 my-1" />
             ))
           ) : categories.length > 0 ? (
-            <div className="space-y-1">
+            <div className="space-y-0">
               <CategoryItem
                 name="ALL CHANNELS"
+                count={345}
                 isActive={activeCategory === 'all'}
                 onClick={() => handleCategoryClick('all')}
               />
@@ -49,6 +50,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
                 <CategoryItem
                   key={category.id}
                   name={category.name}
+                  count={56}
                   isActive={activeCategory === category.id}
                   onClick={() => handleCategoryClick(category.id)}
                 />
@@ -67,20 +69,24 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
 
 interface CategoryItemProps {
   name: string;
+  count?: number;
   isActive: boolean;
   onClick: () => void;
 }
 
-const CategoryItem: React.FC<CategoryItemProps> = ({ name, isActive, onClick }) => (
+const CategoryItem: React.FC<CategoryItemProps> = ({ name, count, isActive, onClick }) => (
   <button
     onClick={onClick}
-    className={`w-full text-left p-3 rounded-md flex items-center
+    className={`w-full text-left p-3 flex items-center justify-between
       ${isActive 
-        ? 'bg-firetv-accent text-white font-medium animate-pulse-soft' 
-        : 'hover:bg-white/10 text-white/90'} 
-      transition-colors`}
+        ? 'bg-blue-600/50 text-white' 
+        : 'hover:bg-blue-600/30 text-white/90'} 
+      border-b border-white/10`}
   >
     <span>{name}</span>
+    {count !== undefined && (
+      <span className="text-sm opacity-75">{count}</span>
+    )}
   </button>
 );
 
