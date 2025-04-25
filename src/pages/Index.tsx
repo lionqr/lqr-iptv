@@ -21,7 +21,8 @@ const Index = () => {
     const matchesCategory = activeCategory === 'all' || channel.category_id === activeCategory;
     const matchesSearch = !searchTerm || 
       channel.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const isVisible = channel.is_visible !== false;
+    return matchesCategory && matchesSearch && isVisible;
   }) || [];
 
   const handleCategorySelect = (categoryId: string) => {
@@ -95,14 +96,14 @@ const Index = () => {
   }, [isFullScreen]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-700 to-purple-700 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-blue-700 to-purple-700 text-white overflow-hidden">
       {!isFullScreen && (
         <Header onSearch={handleSearch} />
       )}
       <div className={`${isFullScreen ? 'hidden' : 'grid'} grid-cols-12 h-[calc(100vh-64px)]`}>
         <div className="col-span-3 border-r border-white/10">
           <CategorySidebar 
-            categories={categories || []}
+            categories={categories?.filter(cat => cat.is_visible !== false) || []}
             activeCategory={activeCategory} 
             onCategorySelect={handleCategorySelect}
             isLoading={dataLoading}

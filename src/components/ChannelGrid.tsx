@@ -9,6 +9,7 @@ interface Channel {
   name: string;
   logo: string;
   url: string;
+  is_visible?: boolean;
 }
 
 interface ChannelGridProps {
@@ -31,6 +32,9 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
     onChannelSelect(channel);
   };
 
+  // Filter out channels marked as not visible
+  const visibleChannels = channels.filter(channel => channel.is_visible !== false);
+
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 gap-1 p-1">
@@ -41,7 +45,7 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
     );
   }
 
-  if (channels.length === 0) {
+  if (visibleChannels.length === 0) {
     return (
       <div className="flex-1 h-full flex items-center justify-center">
         <div className="text-white/60 text-center">
@@ -54,7 +58,7 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
   return (
     <ScrollArea className="h-full w-full scrollbar-none">
       <div className="grid grid-cols-1 gap-1 p-1">
-        {channels.map((channel) => (
+        {visibleChannels.map((channel) => (
           <button
             key={channel.id}
             onClick={() => handleChannelClick(channel)}

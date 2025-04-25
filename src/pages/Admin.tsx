@@ -27,6 +27,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/
 import { useForm } from 'react-hook-form';
 import { playSoundEffect } from '@/lib/sound-utils';
 import M3UImport from '@/components/M3UImport';
+import { Switch } from '@/components/ui/switch';
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -34,14 +35,16 @@ const Admin = () => {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sheetType, setSheetType] = useState<'category' | 'channel' | 'channelDetails'>('category');
+  const [sheetType, setSheetType] = useState<'category' | 'channel' | 'channelDetails' | 'playlist'>('category');
   const [editingItem, setEditingItem] = useState<Category | Channel | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [hasPlaylists, setHasPlaylists] = useState(false);
 
   const categoryForm = useForm({
     defaultValues: {
       name: '',
+      is_visible: true,
     }
   });
 
@@ -55,11 +58,20 @@ const Admin = () => {
       program_start_time: '',
       program_end_time: '',
       category_id: '',
+      is_visible: true,
+    }
+  });
+
+  const playlistForm = useForm({
+    defaultValues: {
+      name: '',
+      is_default: false,
     }
   });
 
   useEffect(() => {
     fetchCategories();
+    checkForPlaylists();
   }, []);
 
   useEffect(() => {
@@ -69,6 +81,19 @@ const Admin = () => {
       setChannels([]);
     }
   }, [selectedCategory]);
+
+  const checkForPlaylists = async () => {
+    try {
+      const { count, error } = await supabase
+        .from('categories')
+        .select('*', { count: 'exact', head: true });
+      
+      if (error) throw error;
+      setHasPlaylists(count !== null && count > 0);
+    } catch (error) {
+      console.error('Error checking for playlists:', error);
+    }
+  };
 
   const fetchCategories = async () => {
     setLoading(true);
@@ -121,14 +146,39 @@ const Admin = () => {
     setSelectedCategory(category);
   };
 
-  const handleAddCategory = async (data: { name: string }) => {
+  const handleAddPlaylist = async (data: { name: string; is_default: boolean }) => {
     try {
       const { error } = await supabase
         .from('categories')
         .insert([{ 
           name: data.name, 
           order_index: categories.length,
-          last_updated: new Date().toISOString()
+          last_updated: new Date().toISOString(),
+          is_default: data.is_default
+        }]);
+      
+      if (error) throw error;
+      playSoundEffect('select');
+      toast.success('Playlist created successfully');
+      fetchCategories();
+      setHasPlaylists(true);
+      playlistForm.reset();
+    } catch (error) {
+      console.error('Error adding playlist:', error);
+      playSoundEffect('error');
+      toast.error('Failed to create playlist');
+    }
+  };
+
+  const handleAddCategory = async (data: { name: string; is_visible: boolean }) => {
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .insert([{ 
+          name: data.name, 
+          order_index: categories.length,
+          last_updated: new Date().toISOString(),
+          is_visible: data.is_visible
         }]);
       
       if (error) throw error;
@@ -143,7 +193,7 @@ const Admin = () => {
     }
   };
 
-  const handleUpdateCategory = async (data: { name: string }) => {
+  const handleUpdateCategory = async (data: { name: string; is_visible: boolean }) => {
     if (!editingItem) return;
     
     try {
@@ -151,7 +201,8 @@ const Admin = () => {
         .from('categories')
         .update({ 
           name: data.name,
-          last_updated: new Date().toISOString()
+          last_updated: new Date().toISOString(),
+          is_visible: data.is_visible
         })
         .eq('id', editingItem.id);
       
@@ -186,6 +237,7 @@ const Admin = () => {
       if (selectedCategory?.id === category.id) {
         setSelectedCategory(null);
       }
+      checkForPlaylists();
     } catch (error) {
       console.error('Error deleting category:', error);
       playSoundEffect('error');
@@ -200,7 +252,8 @@ const Admin = () => {
     current_program?: string,
     next_program?: string,
     program_start_time?: string,
-    program_end_time?: string
+    program_end_time?: string,
+    is_visible: boolean
   }) => {
     if (!selectedCategory) {
       toast.error('Please select a category first');
@@ -220,7 +273,8 @@ const Admin = () => {
           program_end_time: data.program_end_time || null,
           category_id: selectedCategory.id,
           order_index: channels.length,
-          last_updated: new Date().toISOString()
+          last_updated: new Date().toISOString(),
+          is_visible: data.is_visible
         }]);
       
       if (error) throw error;
@@ -242,7 +296,8 @@ const Admin = () => {
     current_program?: string,
     next_program?: string,
     program_start_time?: string,
-    program_end_time?: string
+    program_end_time?: string,
+    is_visible: boolean
   }) => {
     if (!editingItem || !selectedCategory) return;
     
@@ -257,7 +312,8 @@ const Admin = () => {
           next_program: data.next_program || null,
           program_start_time: data.program_start_time || null,
           program_end_time: data.program_end_time || null,
-          last_updated: new Date().toISOString()
+          last_updated: new Date().toISOString(),
+          is_visible: data.is_visible
         })
         .eq('id', editingItem.id);
       
@@ -302,7 +358,10 @@ const Admin = () => {
     setSheetType('category');
     if (category) {
       setEditingItem(category);
-      categoryForm.reset({ name: category.name });
+      categoryForm.reset({ 
+        name: category.name,
+        is_visible: category.is_visible !== false
+      });
     } else {
       setEditingItem(null);
       categoryForm.reset();
@@ -321,12 +380,31 @@ const Admin = () => {
         current_program: channel.current_program || '',
         next_program: channel.next_program || '',
         program_start_time: channel.program_start_time || '',
-        program_end_time: channel.program_end_time || ''
+        program_end_time: channel.program_end_time || '',
+        is_visible: channel.is_visible !== false
       });
     } else {
       setEditingItem(null);
-      channelForm.reset();
+      channelForm.reset({
+        name: '',
+        logo: '',
+        url: '',
+        current_program: '',
+        next_program: '',
+        program_start_time: '',
+        program_end_time: '',
+        is_visible: true
+      });
     }
+    playSoundEffect('navigate');
+  };
+
+  const openPlaylistSheet = () => {
+    setSheetType('playlist');
+    playlistForm.reset({
+      name: '',
+      is_default: false
+    });
     playSoundEffect('navigate');
   };
 
@@ -373,10 +451,11 @@ const Admin = () => {
     fetchCategories();
     toast.success('M3U playlist imported successfully');
     playSoundEffect('select');
+    checkForPlaylists();
   };
 
   return (
-    <div className="min-h-screen bg-firetv-background text-white p-6">
+    <div className="min-h-screen bg-firetv-background text-white p-6 overflow-hidden">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
@@ -391,7 +470,82 @@ const Admin = () => {
               <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
             </button>
             
-            <M3UImport onSuccess={handleM3UImportSuccess} />
+            {hasPlaylists ? (
+              <M3UImport onSuccess={handleM3UImportSuccess} />
+            ) : (
+              <Sheet>
+                <SheetTrigger asChild>
+                  <button 
+                    onClick={openPlaylistSheet}
+                    className="flex items-center space-x-2 px-4 py-2 bg-blue-600 rounded-md hover:bg-blue-500"
+                    title="Create playlist first"
+                  >
+                    <Upload size={16} />
+                    <span>Create Playlist First</span>
+                  </button>
+                </SheetTrigger>
+                <SheetContent className="bg-firetv-dark border-l border-firetv-accent">
+                  <SheetHeader>
+                    <SheetTitle className="text-white">Create New Playlist</SheetTitle>
+                    <SheetDescription className="text-gray-400">
+                      Create a playlist before importing M3U files
+                    </SheetDescription>
+                  </SheetHeader>
+                  <form 
+                    onSubmit={playlistForm.handleSubmit(handleAddPlaylist)}
+                    className="space-y-6 py-6"
+                  >
+                    <FormField
+                      control={playlistForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-white">Playlist Name</FormLabel>
+                          <FormControl>
+                            <input 
+                              type="text"
+                              className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
+                              placeholder="Enter playlist name"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={playlistForm.control}
+                      name="is_default"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-700 p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base text-white">
+                              Set as Default Playlist
+                            </FormLabel>
+                            <div className="text-sm text-gray-400">
+                              The default playlist will be shown on the main page
+                            </div>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <button 
+                      type="submit"
+                      className="w-full bg-firetv-accent py-2 rounded-md hover:bg-firetv-accent/80"
+                    >
+                      Create Playlist
+                    </button>
+                  </form>
+                </SheetContent>
+              </Sheet>
+            )}
             
             <button 
               onClick={() => navigate('/')}
@@ -408,9 +562,9 @@ const Admin = () => {
           </div>
         )}
         
-        <div className="grid md:grid-cols-12 gap-6">
+        <div className="grid md:grid-cols-12 gap-6 h-[calc(100vh-180px)] overflow-hidden">
           {/* Categories Panel */}
-          <div className="md:col-span-4 bg-firetv-dark rounded-lg p-6">
+          <div className="md:col-span-4 bg-firetv-dark rounded-lg p-6 flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-medium">Categories</h2>
               <Sheet>
@@ -456,6 +610,30 @@ const Admin = () => {
                         </FormItem>
                       )}
                     />
+                    
+                    <FormField
+                      control={categoryForm.control}
+                      name="is_visible"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-700 p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base text-white">
+                              Visible
+                            </FormLabel>
+                            <div className="text-sm text-gray-400">
+                              Show this category in the main app
+                            </div>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    
                     <button 
                       type="submit"
                       className="w-full bg-firetv-accent py-2 rounded-md hover:bg-firetv-accent/80"
@@ -467,7 +645,7 @@ const Admin = () => {
               </Sheet>
             </div>
             
-            <ScrollArea className="h-[500px]">
+            <ScrollArea className="flex-1">
               <div className="space-y-2 pr-4">
                 {loading ? (
                   Array(5).fill(0).map((_, i) => (
@@ -489,9 +667,12 @@ const Admin = () => {
                       >
                         {selectedCategory?.id === category.id ? 
                           <FolderOpen size={18} /> : <Folder size={18} />}
-                        <span>{category.name}</span>
+                        <span className="truncate">{category.name}</span>
                         {category.is_default && (
                           <span className="text-xs bg-green-700 px-2 py-1 rounded-full">Default</span>
+                        )}
+                        {category.is_visible === false && (
+                          <span className="text-xs bg-gray-700 px-2 py-1 rounded-full">Hidden</span>
                         )}
                       </div>
                       <div className="flex space-x-1">
@@ -520,7 +701,7 @@ const Admin = () => {
           </div>
           
           {/* Channels Panel */}
-          <div className="md:col-span-8 bg-firetv-dark rounded-lg p-6">
+          <div className="md:col-span-8 bg-firetv-dark rounded-lg p-6 flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-medium">
                 {selectedCategory ? `Channels in ${selectedCategory.name}` : 'Select a Category'}
@@ -599,6 +780,29 @@ const Admin = () => {
                                   className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
                                   placeholder="Enter stream URL"
                                   {...field}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={channelForm.control}
+                          name="is_visible"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-700 p-4">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-base text-white">
+                                  Visible
+                                </FormLabel>
+                                <div className="text-sm text-gray-400">
+                                  Show this channel in the main app
+                                </div>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
                                 />
                               </FormControl>
                             </FormItem>
@@ -697,11 +901,11 @@ const Admin = () => {
             </div>
             
             {!selectedCategory ? (
-              <div className="text-center text-gray-400 p-12">
+              <div className="text-center text-gray-400 p-12 flex-1 flex items-center justify-center">
                 Please select a category from the left panel to view its channels.
               </div>
             ) : (
-              <ScrollArea className="h-[500px]">
+              <ScrollArea className="flex-1">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pr-4">
                   {loading ? (
                     Array(6).fill(0).map((_, i) => (
@@ -738,6 +942,12 @@ const Admin = () => {
                           {channel.is_default && (
                             <div className="absolute top-2 right-2 bg-green-700 px-2 py-1 rounded-full text-xs">
                               Default
+                            </div>
+                          )}
+                          
+                          {channel.is_visible === false && (
+                            <div className="absolute top-2 left-2 bg-gray-700 px-2 py-1 rounded-full text-xs">
+                              Hidden
                             </div>
                           )}
                         </div>
@@ -817,6 +1027,13 @@ const Admin = () => {
                     <p className="text-white break-all">{(editingItem as Channel).logo}</p>
                   </div>
                 )}
+                
+                <div>
+                  <h3 className="text-sm text-gray-400">Visibility</h3>
+                  <p className="text-white">
+                    {(editingItem as Channel).is_visible === false ? 'Hidden' : 'Visible'} 
+                  </p>
+                </div>
                 
                 {(editingItem as Channel).current_program && (
                   <div>

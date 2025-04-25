@@ -9,6 +9,7 @@ import { Input } from './ui/input';
 interface Category {
   id: string;
   name: string;
+  is_visible?: boolean;
 }
 
 interface CategorySidebarProps {
@@ -32,11 +33,12 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
   };
 
   const filteredCategories = categories.filter(category =>
-    category.name.toLowerCase().includes(searchTerm.toLowerCase())
+    category.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
+    (category.is_visible !== false) // Only show visible categories
   );
 
   return (
-    <div className="bg-gradient-to-b from-blue-700 to-purple-700 h-full w-full">
+    <div className="bg-gradient-to-b from-blue-700 to-purple-700 h-full w-full flex flex-col">
       <div className="p-4 border-b border-white/10">
         <div className="relative">
           <Input
@@ -49,7 +51,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
           <Search className="absolute right-3 top-2.5 text-white/60" size={18} />
         </div>
       </div>
-      <ScrollArea className="h-[calc(100%-60px)] scrollbar-none">
+      <ScrollArea className="flex-1 scrollbar-none">
         <div className="space-y-0 p-2">
           {isLoading ? (
             Array(8).fill(0).map((_, i) => (

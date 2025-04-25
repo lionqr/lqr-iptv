@@ -147,7 +147,8 @@ async function savePlaylistToDatabase(
       .from('categories')
       .insert({
         name: categoryName,
-        is_default: playlistInfo.isDefault
+        is_default: playlistInfo.isDefault,
+        is_visible: true // Make categories visible by default
       })
       .select('id')
       .single();
@@ -172,7 +173,8 @@ async function savePlaylistToDatabase(
         logo: channel.logo,
         url: channel.url,
         category_id: categoryId,
-        is_default: playlistInfo.isDefault
+        is_default: playlistInfo.isDefault,
+        is_visible: true // Make channels visible by default
       });
   }
 }
