@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, X, Maximize, Settings, VolumeX, PlayIcon, PauseIcon } from 'lucide-react';
+import { Volume2, X, Settings, VolumeX, PlayIcon, PauseIcon } from 'lucide-react';
 import { playSoundEffect } from '@/lib/sound-utils';
 import type { Tables } from '@/integrations/supabase/types';
 
@@ -164,7 +163,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               key={channel.url}
               controls={false}
               autoPlay
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain cursor-pointer"
               src={channel.url}
               onClick={handleToggleFullScreen}
             />
@@ -220,14 +219,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
                       <div className="text-white font-bold truncate">{channel.name}</div>
                     )}
                     <div className="flex items-center space-x-2 ml-auto">
-                      {!isFullScreen && (
-                        <button 
-                          onClick={handleToggleFullScreen}
-                          className="text-white p-2 rounded-full hover:bg-white hover:bg-opacity-20"
-                        >
-                          <Maximize size={20} />
-                        </button>
-                      )}
                     </div>
                   </div>
                   

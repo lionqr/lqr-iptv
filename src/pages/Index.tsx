@@ -94,12 +94,12 @@ const Index = () => {
   }, [isFullScreen, selectedChannel]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-700 to-purple-700 text-white overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-700 to-purple-700 text-white overflow-hidden flex flex-col">
       {!isFullScreen && (
         <Header onSearch={handleSearch} />
       )}
-      <div className={`${isFullScreen ? 'hidden' : 'grid'} grid-cols-12 h-[calc(100vh-64px)]`}>
-        <div className="col-span-3 border-r border-white/10">
+      <div className={`${isFullScreen ? 'hidden' : 'grid'} grid-cols-12 flex-1 overflow-hidden`}>
+        <div className="col-span-3 border-r border-white/10 overflow-hidden">
           <CategorySidebar 
             categories={categories?.filter(cat => cat.is_visible !== false) || []}
             activeCategory={activeCategory} 
@@ -108,7 +108,7 @@ const Index = () => {
             allChannels={channels || []}
           />
         </div>
-        <div className="col-span-6 border-r border-white/10">
+        <div className="col-span-6 border-r border-white/10 overflow-hidden">
           <ChannelGrid 
             channels={filteredChannels} 
             onChannelSelect={handleChannelSelect} 
@@ -117,7 +117,7 @@ const Index = () => {
             searchTerm={searchTerm}
           />
         </div>
-        <div className="col-span-3 aspect-square">
+        <div className="col-span-3">
           <VideoPlayer 
             channel={selectedChannel}
             isFullScreen={isFullScreen}

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import { playSoundEffect } from '@/lib/sound-utils';
 import { Skeleton } from './ui/skeleton';
@@ -29,7 +28,6 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
 }) => {
   const activeChannelRef = useRef<HTMLButtonElement>(null);
   
-  // Auto-scroll to the active channel when it changes
   useEffect(() => {
     if (activeChannelId && activeChannelRef.current) {
       activeChannelRef.current.scrollIntoView({
@@ -44,7 +42,6 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
     onChannelSelect(channel);
   };
 
-  // Filter out channels marked as not visible
   const visibleChannels = channels.filter(channel => channel.is_visible !== false);
 
   if (isLoading) {
@@ -68,7 +65,7 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
   }
 
   return (
-    <ScrollArea className="h-full w-full scrollbar-none">
+    <ScrollArea className="h-[calc(100vh-64px)] w-full">
       <div className="grid grid-cols-1 gap-1 p-1">
         {visibleChannels.map((channel) => (
           <button
@@ -77,7 +74,7 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
             onClick={() => handleChannelClick(channel)}
             className={`w-full flex items-center p-4 transition-colors duration-200
               ${activeChannelId === channel.id 
-                ? 'bg-blue-600 animate-pulse' 
+                ? 'bg-blue-600' 
                 : 'hover:bg-blue-600/30'}`}
           >
             <div className="h-10 w-10 rounded-full overflow-hidden mr-4">
