@@ -27,6 +27,7 @@ const Index = () => {
 
   const handleChannelSelect = (channel: Channel) => {
     setSelectedChannel(channel);
+    setIsFullScreen(true);
   };
 
   const handleToggleFullScreen = () => {
@@ -67,7 +68,7 @@ const Index = () => {
             isLoading={isLoading || dataLoading}
           />
         </div>
-        <div className="col-span-3">
+        <div className="col-span-3 aspect-square">
           <VideoPlayer 
             channel={selectedChannel}
             isFullScreen={isFullScreen}

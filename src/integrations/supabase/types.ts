@@ -14,6 +14,7 @@ export type Database = {
           created_at: string | null
           id: string
           is_default: boolean | null
+          last_updated: string | null
           name: string
           order_index: number | null
         }
@@ -21,6 +22,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_default?: boolean | null
+          last_updated?: string | null
           name: string
           order_index?: number | null
         }
@@ -28,6 +30,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_default?: boolean | null
+          last_updated?: string | null
           name?: string
           order_index?: number | null
         }
@@ -37,31 +40,46 @@ export type Database = {
         Row: {
           category_id: string | null
           created_at: string | null
+          current_program: string | null
           id: string
           is_default: boolean | null
+          last_updated: string | null
           logo: string | null
           name: string
+          next_program: string | null
           order_index: number | null
+          program_end_time: string | null
+          program_start_time: string | null
           url: string
         }
         Insert: {
           category_id?: string | null
           created_at?: string | null
+          current_program?: string | null
           id?: string
           is_default?: boolean | null
+          last_updated?: string | null
           logo?: string | null
           name: string
+          next_program?: string | null
           order_index?: number | null
+          program_end_time?: string | null
+          program_start_time?: string | null
           url: string
         }
         Update: {
           category_id?: string | null
           created_at?: string | null
+          current_program?: string | null
           id?: string
           is_default?: boolean | null
+          last_updated?: string | null
           logo?: string | null
           name?: string
+          next_program?: string | null
           order_index?: number | null
+          program_end_time?: string | null
+          program_start_time?: string | null
           url?: string
         }
         Relationships: [

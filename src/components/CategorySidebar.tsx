@@ -3,6 +3,8 @@ import React from 'react';
 import { playSoundEffect } from '@/lib/sound-utils';
 import { Skeleton } from './ui/skeleton';
 import { ScrollArea } from './ui/scroll-area';
+import { Search } from 'lucide-react';
+import { Input } from './ui/input';
 
 interface Category {
   id: string;
@@ -22,15 +24,30 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
   onCategorySelect,
   isLoading = false
 }) => {
+  const [searchTerm, setSearchTerm] = React.useState('');
+
   const handleCategoryClick = (categoryId: string) => {
     playSoundEffect('select');
     onCategorySelect(categoryId);
   };
 
+  const filteredCategories = categories.filter(category =>
+    category.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="bg-gradient-to-b from-blue-700 to-purple-700 h-full w-full">
       <div className="p-4 border-b border-white/10">
-        <div className="text-white text-lg">Search Category</div>
+        <div className="relative">
+          <Input
+            type="text"
+            placeholder="Search Category"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="bg-white/10 border-none text-white placeholder:text-white/60"
+          />
+          <Search className="absolute right-3 top-2.5 text-white/60" size={18} />
+        </div>
       </div>
       <ScrollArea className="h-[calc(100%-60px)] scrollbar-none">
         <div className="space-y-0 p-2">
@@ -38,7 +55,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
             Array(8).fill(0).map((_, i) => (
               <Skeleton key={i} className="h-10 w-full bg-white/10 my-1" />
             ))
-          ) : categories.length > 0 ? (
+          ) : filteredCategories.length > 0 ? (
             <div className="space-y-0">
               <CategoryItem
                 name="ALL CHANNELS"
@@ -46,11 +63,10 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
                 isActive={activeCategory === 'all'}
                 onClick={() => handleCategoryClick('all')}
               />
-              {categories.map((category) => (
+              {filteredCategories.map((category) => (
                 <CategoryItem
                   key={category.id}
                   name={category.name}
-                  count={56}
                   isActive={activeCategory === category.id}
                   onClick={() => handleCategoryClick(category.id)}
                 />
@@ -58,7 +74,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
             </div>
           ) : (
             <div className="text-white/60 text-center py-4">
-              No categories available. Admin needs to add categories.
+              No categories found for "{searchTerm}"
             </div>
           )}
         </div>

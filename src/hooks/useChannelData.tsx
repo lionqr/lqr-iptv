@@ -19,6 +19,7 @@ export const useChannelData = () => {
       if (error) throw error;
       return data as Category[];
     },
+    refetchInterval: 24 * 60 * 60 * 1000, // Refetch every 24 hours
   });
 
   const { data: channels, isLoading: isLoadingChannels } = useQuery({
@@ -33,6 +34,7 @@ export const useChannelData = () => {
       if (error) throw error;
       return data as Channel[];
     },
+    refetchInterval: 24 * 60 * 60 * 1000, // Refetch every 24 hours
   });
 
   return {
