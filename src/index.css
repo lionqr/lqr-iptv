@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -35,19 +36,12 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -96,6 +90,51 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-firetv-background text-firetv-text;
   }
+}
+
+@layer components {
+  .category-item {
+    @apply cursor-pointer p-3 mb-2 rounded-lg transition-all duration-300 hover:bg-firetv-accent hover:text-firetv-text;
+  }
+
+  .category-item.active {
+    @apply bg-firetv-accent text-firetv-text;
+  }
+
+  .channel-item {
+    @apply relative cursor-pointer transition-all duration-300 rounded-lg overflow-hidden;
+  }
+
+  .channel-item:hover, .channel-item:focus {
+    @apply transform scale-105 shadow-lg;
+    box-shadow: 0 0 15px theme('colors.firetv.accent');
+  }
+
+  .channel-item.active {
+    @apply ring-2 ring-firetv-highlight;
+  }
+
+  .channel-item .channel-info {
+    @apply absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-firetv-black to-transparent;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: #222222;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #9b87f5;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #ea384c;
 }
