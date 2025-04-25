@@ -14,6 +14,7 @@ export type Database = {
           created_at: string | null
           hidden: boolean | null
           id: string
+          is_default: boolean | null
           name: string
           order_index: number | null
           playlist_id: string | null
@@ -23,6 +24,7 @@ export type Database = {
           created_at?: string | null
           hidden?: boolean | null
           id?: string
+          is_default?: boolean | null
           name: string
           order_index?: number | null
           playlist_id?: string | null
@@ -32,6 +34,7 @@ export type Database = {
           created_at?: string | null
           hidden?: boolean | null
           id?: string
+          is_default?: boolean | null
           name?: string
           order_index?: number | null
           playlist_id?: string | null
@@ -54,6 +57,7 @@ export type Database = {
           epg_channel_id: string | null
           hidden: boolean | null
           id: string
+          is_default: boolean | null
           logo: string | null
           name: string
           order_index: number | null
@@ -66,6 +70,7 @@ export type Database = {
           epg_channel_id?: string | null
           hidden?: boolean | null
           id?: string
+          is_default?: boolean | null
           logo?: string | null
           name: string
           order_index?: number | null
@@ -78,6 +83,7 @@ export type Database = {
           epg_channel_id?: string | null
           hidden?: boolean | null
           id?: string
+          is_default?: boolean | null
           logo?: string | null
           name?: string
           order_index?: number | null

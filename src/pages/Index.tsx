@@ -1,36 +1,26 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Header from '@/components/Header';
 import CategorySidebar from '@/components/CategorySidebar';
 import ChannelGrid from '@/components/ChannelGrid';
 import VideoPlayer from '@/components/VideoPlayer';
-import { categories, channels, getChannelsByCategory, Channel } from '@/data/channels';
+import { useChannelData } from '@/hooks/useChannelData';
 
 const Index = () => {
-  const [activeCategory, setActiveCategory] = useState<string>(categories[0].id);
-  const [filteredChannels, setFilteredChannels] = useState<Channel[]>([]);
-  const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [selectedChannel, setSelectedChannel] = useState<any | null>(null);
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { categories, channels, isLoading } = useChannelData();
 
-  useEffect(() => {
-    const loadChannels = async () => {
-      setIsLoading(true);
-      // Simulate loading delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const channelsInCategory = getChannelsByCategory(activeCategory);
-      setFilteredChannels(channelsInCategory);
-      setIsLoading(false);
-    };
-
-    loadChannels();
-  }, [activeCategory]);
+  const filteredChannels = channels?.filter(channel => 
+    activeCategory === 'all' || channel.category_id === activeCategory
+  ) || [];
 
   const handleCategorySelect = (categoryId: string) => {
     setActiveCategory(categoryId);
   };
 
-  const handleChannelSelect = (channel: Channel) => {
+  const handleChannelSelect = (channel: any) => {
     setSelectedChannel(channel);
     setIsFullScreen(true);
   };
@@ -41,6 +31,7 @@ const Index = () => {
       <div className={`${isFullScreen ? 'hidden' : 'grid'} grid-cols-12 h-[calc(100vh-64px)]`}>
         <div className="col-span-2 border-r border-white/10">
           <CategorySidebar 
+            categories={categories || []}
             activeCategory={activeCategory} 
             onCategorySelect={handleCategorySelect}
             isLoading={isLoading}

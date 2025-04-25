@@ -1,16 +1,22 @@
 
 import React from 'react';
-import { Category } from '@/data/channels';
 import { playSoundEffect } from '@/lib/sound-utils';
 import { Skeleton } from './ui/skeleton';
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 interface CategorySidebarProps {
+  categories: Category[];
   activeCategory: string;
   onCategorySelect: (categoryId: string) => void;
   isLoading?: boolean;
 }
 
 const CategorySidebar: React.FC<CategorySidebarProps> = ({ 
+  categories, 
   activeCategory, 
   onCategorySelect,
   isLoading = false
@@ -30,21 +36,27 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
           Array(8).fill(0).map((_, i) => (
             <Skeleton key={i} className="h-10 w-full bg-white/10" />
           ))
-        ) : (
+        ) : categories.length > 0 ? (
           <div className="space-y-1">
             <CategoryItem
               name="ALL"
-              count={345}
+              count={categories.length}
               isActive={activeCategory === 'all'}
               onClick={() => handleCategoryClick('all')}
             />
-            <CategoryItem
-              name="Category 1"
-              count={56}
-              isActive={activeCategory === 'cat1'}
-              onClick={() => handleCategoryClick('cat1')}
-            />
-            {/* Add more categories as needed */}
+            {categories.map((category) => (
+              <CategoryItem
+                key={category.id}
+                name={category.name}
+                count={0}
+                isActive={activeCategory === category.id}
+                onClick={() => handleCategoryClick(category.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-white/60 text-center py-4">
+            No categories available. Admin needs to add default categories.
           </div>
         )}
       </div>

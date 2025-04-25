@@ -1,8 +1,13 @@
-
 import React from 'react';
-import { Channel } from '@/data/channels';
 import { playSoundEffect } from '@/lib/sound-utils';
 import { Skeleton } from './ui/skeleton';
+
+interface Channel {
+  id: string;
+  name: string;
+  logo: string;
+  url: string;
+}
 
 interface ChannelGridProps {
   channels: Channel[];
@@ -32,6 +37,16 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
     );
   }
 
+  if (channels.length === 0) {
+    return (
+      <div className="flex-1 h-full bg-gradient-to-br from-blue-600/50 to-purple-500/50 flex items-center justify-center">
+        <div className="text-white/60 text-center">
+          No channels available. Admin needs to add default channels.
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 h-full bg-gradient-to-br from-blue-600/50 to-purple-500/50 overflow-y-auto">
       <div className="space-y-1 p-2">
@@ -44,11 +59,14 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
               text-white transition-colors`}
           >
             <div className="w-12 h-12 rounded bg-blue-700 flex items-center justify-center">
-              {channel.logo}
+              {channel.logo ? (
+                <img src={channel.logo} alt={channel.name} className="w-10 h-10 object-contain" />
+              ) : (
+                channel.name.charAt(0)
+              )}
             </div>
             <div className="flex-1 text-left">
               <div className="font-medium">{channel.name}</div>
-              <div className="text-sm opacity-80">{channel.currentProgram.title}</div>
             </div>
           </button>
         ))}
