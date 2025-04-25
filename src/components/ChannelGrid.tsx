@@ -1,61 +1,56 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Channel } from '@/data/channels';
 import { playSoundEffect } from '@/lib/sound-utils';
+import { Skeleton } from './ui/skeleton';
 
 interface ChannelGridProps {
   channels: Channel[];
   onChannelSelect: (channel: Channel) => void;
   activeChannelId: string | null;
+  isLoading?: boolean;
 }
 
-const ChannelGrid: React.FC<ChannelGridProps> = ({ channels, onChannelSelect, activeChannelId }) => {
-  const [hoveredChannelId, setHoveredChannelId] = useState<string | null>(null);
-
+const ChannelGrid: React.FC<ChannelGridProps> = ({ 
+  channels, 
+  onChannelSelect, 
+  activeChannelId,
+  isLoading = false
+}) => {
   const handleChannelClick = (channel: Channel) => {
     playSoundEffect('select');
     onChannelSelect(channel);
   };
 
-  const handleChannelHover = (channelId: string) => {
-    if (hoveredChannelId !== channelId) {
-      playSoundEffect('navigate');
-      setHoveredChannelId(channelId);
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 gap-2 p-4 bg-gradient-to-br from-blue-600/50 to-purple-500/50">
+        {Array(6).fill(0).map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full" />
+        ))}
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-firetv-background p-6 h-full overflow-y-auto">
-      <h2 className="text-2xl font-bold mb-6 text-firetv-text">Channels</h2>
-      
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
+    <div className="flex-1 h-full bg-gradient-to-br from-blue-600/50 to-purple-500/50 overflow-y-auto">
+      <div className="space-y-1 p-2">
         {channels.map((channel) => (
-          <div
+          <button
             key={channel.id}
-            className={`channel-item ${activeChannelId === channel.id ? 'active' : ''} ${
-              hoveredChannelId === channel.id ? 'animate-pulse-soft' : ''
-            }`}
             onClick={() => handleChannelClick(channel)}
-            onMouseEnter={() => handleChannelHover(channel.id)}
-            tabIndex={0}
-            role="button"
-            aria-pressed={activeChannelId === channel.id}
+            className={`w-full flex items-center gap-4 p-2 rounded
+              ${activeChannelId === channel.id ? 'bg-white/20' : 'hover:bg-white/10'}
+              text-white transition-colors`}
           >
-            <div className="aspect-video relative">
-              <img 
-                src={channel.thumbnail} 
-                alt={channel.name} 
-                className="w-full h-full object-cover rounded-lg"
-              />
-              <div className="channel-info">
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl">{channel.logo}</span>
-                  <h3 className="font-bold text-white">{channel.name}</h3>
-                </div>
-                <p className="text-sm text-firetv-text-secondary mt-1 truncate">{channel.currentProgram.title}</p>
-              </div>
+            <div className="w-12 h-12 rounded bg-blue-700 flex items-center justify-center">
+              {channel.logo}
             </div>
-          </div>
+            <div className="flex-1 text-left">
+              <div className="font-medium">{channel.name}</div>
+              <div className="text-sm opacity-80">{channel.currentProgram.title}</div>
+            </div>
+          </button>
         ))}
       </div>
     </div>

@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import Header from '@/components/Header';
 import CategorySidebar from '@/components/CategorySidebar';
 import ChannelGrid from '@/components/ChannelGrid';
 import VideoPlayer from '@/components/VideoPlayer';
@@ -10,11 +11,19 @@ const Index = () => {
   const [filteredChannels, setFilteredChannels] = useState<Channel[]>([]);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Update filtered channels when category changes
   useEffect(() => {
-    const channelsInCategory = getChannelsByCategory(activeCategory);
-    setFilteredChannels(channelsInCategory);
+    const loadChannels = async () => {
+      setIsLoading(true);
+      // Simulate loading delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const channelsInCategory = getChannelsByCategory(activeCategory);
+      setFilteredChannels(channelsInCategory);
+      setIsLoading(false);
+    };
+
+    loadChannels();
   }, [activeCategory]);
 
   const handleCategorySelect = (categoryId: string) => {
@@ -23,51 +32,41 @@ const Index = () => {
 
   const handleChannelSelect = (channel: Channel) => {
     setSelectedChannel(channel);
-    // When a channel is selected, toggle fullscreen
     setIsFullScreen(true);
   };
 
-  const handleExitFullScreen = () => {
-    setIsFullScreen(false);
-  };
-
   return (
-    <div className="min-h-screen bg-firetv-background">
-      {/* Main Layout */}
-      <div className={`${isFullScreen ? 'hidden' : 'grid'} grid-cols-1 lg:grid-cols-12 h-screen`}>
-        {/* Left Sidebar - Categories */}
-        <div className="lg:col-span-2 h-full">
+    <div className="min-h-screen bg-gray-900 text-white">
+      <Header />
+      <div className={`${isFullScreen ? 'hidden' : 'grid'} grid-cols-12 h-[calc(100vh-64px)]`}>
+        <div className="col-span-2 border-r border-white/10">
           <CategorySidebar 
             activeCategory={activeCategory} 
-            onCategorySelect={handleCategorySelect} 
+            onCategorySelect={handleCategorySelect}
+            isLoading={isLoading}
           />
         </div>
-        
-        {/* Center - Channel Grid */}
-        <div className="lg:col-span-6 h-full">
+        <div className="col-span-6 border-r border-white/10">
           <ChannelGrid 
             channels={filteredChannels} 
             onChannelSelect={handleChannelSelect} 
             activeChannelId={selectedChannel?.id || null}
+            isLoading={isLoading}
           />
         </div>
-        
-        {/* Right - Video Player */}
-        <div className="lg:col-span-4 p-4 h-full">
+        <div className="col-span-4">
           <VideoPlayer 
-            channel={selectedChannel} 
-            isFullScreen={isFullScreen} 
-            onExitFullScreen={handleExitFullScreen} 
+            channel={selectedChannel}
+            isFullScreen={isFullScreen}
+            onExitFullScreen={() => setIsFullScreen(false)}
           />
         </div>
       </div>
-      
-      {/* Fullscreen Mode */}
       {isFullScreen && (
         <VideoPlayer 
-          channel={selectedChannel} 
-          isFullScreen={true} 
-          onExitFullScreen={handleExitFullScreen} 
+          channel={selectedChannel}
+          isFullScreen={true}
+          onExitFullScreen={() => setIsFullScreen(false)}
         />
       )}
     </div>
