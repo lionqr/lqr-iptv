@@ -35,6 +35,7 @@ const Index = () => {
 
   const handleChannelSelect = useCallback((channel: Channel) => {
     setSelectedChannel(channel);
+    setIsFullScreen(true);
     playSoundEffect('select');
   }, []);
 
