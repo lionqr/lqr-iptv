@@ -1,7 +1,11 @@
+
 import React, { useState } from 'react';
-import { Channel, Program } from '@/data/channels';
+import { Volume2, X } from 'lucide-react';
 import { playSoundEffect } from '@/lib/sound-utils';
-import { Settings, Volume2, ChevronsUp, X } from 'lucide-react';
+import { Tables } from '@/integrations/supabase/types';
+
+// Define the type for our channel based on Supabase's database types
+type Channel = Tables<'channels'>;
 
 interface VideoPlayerProps {
   channel: Channel | null;
@@ -34,13 +38,19 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, isFullScreen, onExit
     <div className={`relative ${isFullScreen ? 'fixed inset-0 z-50 bg-firetv-black' : ''}`}>
       <div className={`relative ${isFullScreen ? 'w-full h-full' : 'aspect-square'}`}>
         <div className="absolute inset-0 bg-firetv-dark flex items-center justify-center rounded-lg overflow-hidden">
-          <video
-            key={channel.url}
-            controls
-            autoPlay
-            className="w-full h-full object-contain"
-            src={channel.url}
-          />
+          {channel.url ? (
+            <video
+              key={channel.url}
+              controls
+              autoPlay
+              className="w-full h-full object-contain"
+              src={channel.url}
+            />
+          ) : (
+            <div className="text-center text-white">
+              <p>Channel URL not available</p>
+            </div>
+          )}
           
           {/* Controls overlay - only visible in fullscreen */}
           {isFullScreen && (
@@ -68,27 +78,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ channel, isFullScreen, onExit
         <div className="mt-4 bg-firetv-dark p-4 rounded-lg">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg text-firetv-text">{channel.name}</h3>
-            <button 
-              onClick={toggleSettings}
-              className="p-2 rounded-full hover:bg-firetv-accent transition-colors"
-            >
-              <Settings size={20} />
-            </button>
           </div>
-          
-          {showSettings && (
-            <div className="bg-firetv-black p-3 rounded-lg space-y-3 animate-fade-in">
-              <h4 className="font-semibold mb-2">Settings</h4>
-              <div className="flex justify-between items-center">
-                <span>Volume</span>
-                <div className="flex items-center gap-1">
-                  <button className="w-8 h-8 rounded-full bg-firetv-accent flex items-center justify-center">-</button>
-                  <span>80%</span>
-                  <button className="w-8 h-8 rounded-full bg-firetv-accent flex items-center justify-center">+</button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
