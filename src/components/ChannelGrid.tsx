@@ -50,7 +50,7 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
   }
 
   return (
-    <ScrollArea className="h-full w-full px-2 py-4" scrollHidden>
+    <ScrollArea className="h-full w-full px-2 py-4">
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-2">
         {channels.map((channel) => (
           <button

@@ -32,7 +32,7 @@ const CategorySidebar: React.FC<CategorySidebarProps> = ({
       <div className="p-4 border-b border-white/10">
         <div className="text-white text-lg font-bold">Categories</div>
       </div>
-      <ScrollArea className="h-[calc(100%-60px)]" scrollHidden>
+      <ScrollArea className="h-[calc(100%-60px)]">
         <div className="space-y-1 p-2">
           {isLoading ? (
             Array(8).fill(0).map((_, i) => (
