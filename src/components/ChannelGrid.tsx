@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { playSoundEffect } from '@/lib/sound-utils';
 import { Skeleton } from './ui/skeleton';
 import { ScrollArea } from './ui/scroll-area';
@@ -27,6 +27,18 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
   isLoading = false,
   searchTerm = ''
 }) => {
+  const activeChannelRef = useRef<HTMLButtonElement>(null);
+  
+  // Auto-scroll to the active channel when it changes
+  useEffect(() => {
+    if (activeChannelId && activeChannelRef.current) {
+      activeChannelRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }
+  }, [activeChannelId]);
+
   const handleChannelClick = (channel: Channel) => {
     playSoundEffect('select');
     onChannelSelect(channel);
@@ -61,10 +73,11 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
         {visibleChannels.map((channel) => (
           <button
             key={channel.id}
+            ref={activeChannelId === channel.id ? activeChannelRef : null}
             onClick={() => handleChannelClick(channel)}
-            className={`w-full flex items-center p-4 transition-colors
+            className={`w-full flex items-center p-4 transition-colors duration-200
               ${activeChannelId === channel.id 
-                ? 'bg-blue-600/50' 
+                ? 'bg-blue-600 animate-pulse' 
                 : 'hover:bg-blue-600/30'}`}
           >
             <div className="h-10 w-10 rounded-full overflow-hidden mr-4">

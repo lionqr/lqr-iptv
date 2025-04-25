@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
 import CategorySidebar from '@/components/CategorySidebar';
 import ChannelGrid from '@/components/ChannelGrid';
@@ -25,31 +25,30 @@ const Index = () => {
     return matchesCategory && matchesSearch && isVisible;
   }) || [];
 
-  const handleCategorySelect = (categoryId: string) => {
+  const handleCategorySelect = useCallback((categoryId: string) => {
     setActiveCategory(categoryId);
     setIsLoading(true);
     playSoundEffect('select');
     // Simulate loading delay for category change
-    setTimeout(() => setIsLoading(false), 800);
-  };
+    setTimeout(() => setIsLoading(false), 400);
+  }, []);
 
-  const handleChannelSelect = (channel: Channel) => {
+  const handleChannelSelect = useCallback((channel: Channel) => {
     setSelectedChannel(channel);
-    setIsFullScreen(true);
     playSoundEffect('select');
-  };
+  }, []);
 
-  const handleToggleFullScreen = () => {
+  const handleToggleFullScreen = useCallback(() => {
     playSoundEffect('select');
     setIsFullScreen(!isFullScreen);
-  };
+  }, [isFullScreen]);
 
-  const handleSearch = (term: string) => {
+  const handleSearch = useCallback((term: string) => {
     setSearchTerm(term);
     if (term) {
       playSoundEffect('navigate');
     }
-  };
+  }, []);
 
   // Auto-refresh data every 24 hours when the app is active
   useEffect(() => {
@@ -60,17 +59,15 @@ const Index = () => {
     return () => clearInterval(intervalId);
   }, [refetch]);
 
-  // Handle escape key to exit fullscreen
+  // Handle keyboard navigation for TV-style interface
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isFullScreen) {
+    const handleKeyboardNavigation = (e: KeyboardEvent) => {
+      if (isFullScreen && e.key === 'Escape') {
         playSoundEffect('back');
         setIsFullScreen(false);
+        return;
       }
-    };
-    
-    // Handle keyboard navigation
-    const handleKeyDown = (e: KeyboardEvent) => {
+
       // Only handle keyboard navigation when not in fullscreen
       if (isFullScreen) return;
       
@@ -81,19 +78,20 @@ const Index = () => {
         case 'ArrowRight':
           playSoundEffect('navigate');
           break;
+        case 'Enter':
+          if (selectedChannel) {
+            setIsFullScreen(true);
+            playSoundEffect('select');
+          }
+          break;
         default:
           break;
       }
     };
     
-    window.addEventListener('keydown', handleEscape);
-    window.addEventListener('keydown', handleKeyDown);
-    
-    return () => {
-      window.removeEventListener('keydown', handleEscape);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isFullScreen]);
+    window.addEventListener('keydown', handleKeyboardNavigation);
+    return () => window.removeEventListener('keydown', handleKeyboardNavigation);
+  }, [isFullScreen, selectedChannel]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-700 to-purple-700 text-white overflow-hidden">
@@ -107,6 +105,7 @@ const Index = () => {
             activeCategory={activeCategory} 
             onCategorySelect={handleCategorySelect}
             isLoading={dataLoading}
+            allChannels={channels || []}
           />
         </div>
         <div className="col-span-6 border-r border-white/10">
