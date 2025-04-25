@@ -16,13 +16,15 @@ interface ChannelGridProps {
   onChannelSelect: (channel: Channel) => void;
   activeChannelId: string | null;
   isLoading?: boolean;
+  searchTerm?: string;
 }
 
 const ChannelGrid: React.FC<ChannelGridProps> = ({ 
   channels, 
   onChannelSelect, 
   activeChannelId,
-  isLoading = false
+  isLoading = false,
+  searchTerm = ''
 }) => {
   const handleChannelClick = (channel: Channel) => {
     playSoundEffect('select');
@@ -43,7 +45,7 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
     return (
       <div className="flex-1 h-full flex items-center justify-center">
         <div className="text-white/60 text-center">
-          No channels available. Admin needs to add channels.
+          {searchTerm ? `No channels found for "${searchTerm}"` : 'No channels available. Admin needs to add channels.'}
         </div>
       </div>
     );
