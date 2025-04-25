@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, Settings } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
 import { playSoundEffect } from '@/lib/sound-utils';
 import Hls from 'hls.js';
 import type { Tables } from '@/integrations/supabase/types';
