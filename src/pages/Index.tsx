@@ -5,10 +5,11 @@ import CategorySidebar from '@/components/CategorySidebar';
 import ChannelGrid from '@/components/ChannelGrid';
 import VideoPlayer from '@/components/VideoPlayer';
 import { useChannelData } from '@/hooks/useChannelData';
+import type { Channel } from '@/hooks/useChannelData';
 
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [selectedChannel, setSelectedChannel] = useState<any | null>(null);
+  const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const { categories, channels, isLoading } = useChannelData();
 

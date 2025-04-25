@@ -9,7 +9,71 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          order_index: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          order_index?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          order_index?: number | null
+        }
+        Relationships: []
+      }
+      channels: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          logo: string | null
+          name: string
+          order_index: number | null
+          url: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          logo?: string | null
+          name: string
+          order_index?: number | null
+          url: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          logo?: string | null
+          name?: string
+          order_index?: number | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "channels_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

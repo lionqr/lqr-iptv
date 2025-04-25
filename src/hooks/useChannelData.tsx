@@ -1,6 +1,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Tables } from '@/integrations/supabase/types';
+
+export type Category = Tables<'categories'>;
+export type Channel = Tables<'channels'>;
 
 export const useChannelData = () => {
   const { data: categories, isLoading: isLoadingCategories } = useQuery({
@@ -13,7 +17,7 @@ export const useChannelData = () => {
         .order('order_index');
       
       if (error) throw error;
-      return data || [];
+      return data as Category[];
     },
   });
 
@@ -27,7 +31,7 @@ export const useChannelData = () => {
         .order('order_index');
       
       if (error) throw error;
-      return data || [];
+      return data as Channel[];
     },
   });
 

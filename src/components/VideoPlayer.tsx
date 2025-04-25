@@ -2,9 +2,8 @@
 import React, { useState } from 'react';
 import { Volume2, X } from 'lucide-react';
 import { playSoundEffect } from '@/lib/sound-utils';
-import { Tables } from '@/integrations/supabase/types';
+import type { Tables } from '@/integrations/supabase/types';
 
-// Define the type for our channel based on Supabase's database types
 type Channel = Tables<'channels'>;
 
 interface VideoPlayerProps {
