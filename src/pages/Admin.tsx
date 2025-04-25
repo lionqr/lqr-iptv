@@ -11,6 +11,8 @@ import {
   Trash, 
   Plus,
   Upload,
+  Settings,
+  RefreshCcw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -23,6 +25,8 @@ import {
 } from '@/components/ui/sheet';
 import { Form, FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
+import { playSoundEffect } from '@/lib/sound-utils';
+import M3UImport from '@/components/M3UImport';
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -30,8 +34,10 @@ const Admin = () => {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState(true);
-  const [sheetType, setSheetType] = useState<'category' | 'channel'>('category');
+  const [sheetType, setSheetType] = useState<'category' | 'channel' | 'channelDetails'>('category');
   const [editingItem, setEditingItem] = useState<Category | Channel | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   const categoryForm = useForm({
     defaultValues: {
@@ -44,6 +50,10 @@ const Admin = () => {
       name: '',
       logo: '',
       url: '',
+      current_program: '',
+      next_program: '',
+      program_start_time: '',
+      program_end_time: '',
       category_id: '',
     }
   });
@@ -70,6 +80,15 @@ const Admin = () => {
       
       if (error) throw error;
       setCategories(data || []);
+      
+      // Get last update time
+      const lastUpdate = data && data.length > 0 
+        ? new Date(Math.max(...data.map(c => new Date(c.last_updated || c.created_at).getTime())))
+        : null;
+      
+      if (lastUpdate) {
+        setLastUpdated(lastUpdate.toLocaleString());
+      }
     } catch (error) {
       console.error('Error fetching categories:', error);
       toast.error('Failed to load categories');
@@ -98,6 +117,7 @@ const Admin = () => {
   };
 
   const handleCategorySelect = (category: Category) => {
+    playSoundEffect('select');
     setSelectedCategory(category);
   };
 
@@ -105,14 +125,20 @@ const Admin = () => {
     try {
       const { error } = await supabase
         .from('categories')
-        .insert([{ name: data.name, order_index: categories.length }]);
+        .insert([{ 
+          name: data.name, 
+          order_index: categories.length,
+          last_updated: new Date().toISOString()
+        }]);
       
       if (error) throw error;
+      playSoundEffect('select');
       toast.success('Category added successfully');
       fetchCategories();
       categoryForm.reset();
     } catch (error) {
       console.error('Error adding category:', error);
+      playSoundEffect('error');
       toast.error('Failed to add category');
     }
   };
@@ -123,16 +149,21 @@ const Admin = () => {
     try {
       const { error } = await supabase
         .from('categories')
-        .update({ name: data.name })
+        .update({ 
+          name: data.name,
+          last_updated: new Date().toISOString()
+        })
         .eq('id', editingItem.id);
       
       if (error) throw error;
+      playSoundEffect('select');
       toast.success('Category updated successfully');
       fetchCategories();
       categoryForm.reset();
       setEditingItem(null);
     } catch (error) {
       console.error('Error updating category:', error);
+      playSoundEffect('error');
       toast.error('Failed to update category');
     }
   };
@@ -143,6 +174,7 @@ const Admin = () => {
     }
     
     try {
+      playSoundEffect('back');
       const { error } = await supabase
         .from('categories')
         .delete()
@@ -156,11 +188,20 @@ const Admin = () => {
       }
     } catch (error) {
       console.error('Error deleting category:', error);
+      playSoundEffect('error');
       toast.error('Failed to delete category');
     }
   };
 
-  const handleAddChannel = async (data: { name: string, logo: string, url: string }) => {
+  const handleAddChannel = async (data: { 
+    name: string, 
+    logo: string, 
+    url: string,
+    current_program?: string,
+    next_program?: string,
+    program_start_time?: string,
+    program_end_time?: string
+  }) => {
     if (!selectedCategory) {
       toast.error('Please select a category first');
       return;
@@ -173,21 +214,36 @@ const Admin = () => {
           name: data.name, 
           logo: data.logo, 
           url: data.url,
+          current_program: data.current_program || null,
+          next_program: data.next_program || null,
+          program_start_time: data.program_start_time || null,
+          program_end_time: data.program_end_time || null,
           category_id: selectedCategory.id,
-          order_index: channels.length 
+          order_index: channels.length,
+          last_updated: new Date().toISOString()
         }]);
       
       if (error) throw error;
+      playSoundEffect('select');
       toast.success('Channel added successfully');
       fetchChannelsByCategory(selectedCategory.id);
       channelForm.reset();
     } catch (error) {
       console.error('Error adding channel:', error);
+      playSoundEffect('error');
       toast.error('Failed to add channel');
     }
   };
 
-  const handleUpdateChannel = async (data: { name: string, logo: string, url: string }) => {
+  const handleUpdateChannel = async (data: { 
+    name: string, 
+    logo: string, 
+    url: string,
+    current_program?: string,
+    next_program?: string,
+    program_start_time?: string,
+    program_end_time?: string
+  }) => {
     if (!editingItem || !selectedCategory) return;
     
     try {
@@ -196,17 +252,24 @@ const Admin = () => {
         .update({ 
           name: data.name,
           logo: data.logo,
-          url: data.url
+          url: data.url,
+          current_program: data.current_program || null,
+          next_program: data.next_program || null,
+          program_start_time: data.program_start_time || null,
+          program_end_time: data.program_end_time || null,
+          last_updated: new Date().toISOString()
         })
         .eq('id', editingItem.id);
       
       if (error) throw error;
+      playSoundEffect('select');
       toast.success('Channel updated successfully');
       fetchChannelsByCategory(selectedCategory.id);
       channelForm.reset();
       setEditingItem(null);
     } catch (error) {
       console.error('Error updating channel:', error);
+      playSoundEffect('error');
       toast.error('Failed to update channel');
     }
   };
@@ -217,6 +280,7 @@ const Admin = () => {
     }
     
     try {
+      playSoundEffect('back');
       const { error } = await supabase
         .from('channels')
         .delete()
@@ -229,6 +293,7 @@ const Admin = () => {
       }
     } catch (error) {
       console.error('Error deleting channel:', error);
+      playSoundEffect('error');
       toast.error('Failed to delete channel');
     }
   };
@@ -242,6 +307,7 @@ const Admin = () => {
       setEditingItem(null);
       categoryForm.reset();
     }
+    playSoundEffect('navigate');
   };
 
   const openChannelSheet = (channel?: Channel) => {
@@ -251,12 +317,62 @@ const Admin = () => {
       channelForm.reset({ 
         name: channel.name,
         logo: channel.logo || '',
-        url: channel.url
+        url: channel.url,
+        current_program: channel.current_program || '',
+        next_program: channel.next_program || '',
+        program_start_time: channel.program_start_time || '',
+        program_end_time: channel.program_end_time || ''
       });
     } else {
       setEditingItem(null);
       channelForm.reset();
     }
+    playSoundEffect('navigate');
+  };
+
+  const openChannelDetails = (channel: Channel) => {
+    setSheetType('channelDetails');
+    setEditingItem(channel);
+    playSoundEffect('navigate');
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    playSoundEffect('select');
+    
+    try {
+      // Update last_updated timestamp for all categories
+      await supabase
+        .from('categories')
+        .update({ last_updated: new Date().toISOString() })
+        .gt('id', 0);
+        
+      // Update last_updated timestamp for all channels
+      await supabase
+        .from('channels')
+        .update({ last_updated: new Date().toISOString() })
+        .gt('id', 0);
+      
+      toast.success('Data refreshed successfully');
+      fetchCategories();
+      if (selectedCategory) {
+        fetchChannelsByCategory(selectedCategory.id);
+      }
+      
+      setLastUpdated(new Date().toLocaleString());
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      playSoundEffect('error');
+      toast.error('Failed to refresh data');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleM3UImportSuccess = () => {
+    fetchCategories();
+    toast.success('M3U playlist imported successfully');
+    playSoundEffect('select');
   };
 
   return (
@@ -264,13 +380,33 @@ const Admin = () => {
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <button 
-            onClick={() => navigate('/')}
-            className="px-4 py-2 bg-firetv-accent rounded-md hover:bg-firetv-accent/80"
-          >
-            Back to App
-          </button>
+          <div className="flex space-x-4">
+            <button 
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex items-center space-x-2 px-4 py-2 bg-gray-700 rounded-md hover:bg-gray-600 disabled:opacity-50"
+              title="Refresh data"
+            >
+              <RefreshCcw size={16} className={refreshing ? 'animate-spin' : ''} />
+              <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+            </button>
+            
+            <M3UImport onSuccess={handleM3UImportSuccess} />
+            
+            <button 
+              onClick={() => navigate('/')}
+              className="px-4 py-2 bg-firetv-accent rounded-md hover:bg-firetv-accent/80"
+            >
+              Back to App
+            </button>
+          </div>
         </div>
+        
+        {lastUpdated && (
+          <div className="mb-4 text-sm text-gray-400">
+            Last updated: {lastUpdated}
+          </div>
+        )}
         
         <div className="grid md:grid-cols-12 gap-6">
           {/* Categories Panel */}
@@ -354,6 +490,9 @@ const Admin = () => {
                         {selectedCategory?.id === category.id ? 
                           <FolderOpen size={18} /> : <Folder size={18} />}
                         <span>{category.name}</span>
+                        {category.is_default && (
+                          <span className="text-xs bg-green-700 px-2 py-1 rounded-full">Default</span>
+                        )}
                       </div>
                       <div className="flex space-x-1">
                         <button
@@ -373,7 +512,7 @@ const Admin = () => {
                   ))
                 ) : (
                   <div className="text-center text-gray-400 py-4">
-                    No categories found. Add your first category.
+                    No categories found. Add your first category or import an M3U playlist.
                   </div>
                 )}
               </div>
@@ -407,79 +546,151 @@ const Admin = () => {
                           : 'Fill in the details for the new channel'}
                       </SheetDescription>
                     </SheetHeader>
-                    <form 
-                      onSubmit={channelForm.handleSubmit(
-                        editingItem ? handleUpdateChannel : handleAddChannel
-                      )}
-                      className="space-y-6 py-6"
-                    >
-                      <FormField
-                        control={channelForm.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-white">Channel Name</FormLabel>
-                            <FormControl>
-                              <input 
-                                type="text"
-                                className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
-                                placeholder="Enter channel name"
-                                {...field}
-                              />
-                            </FormControl>
-                          </FormItem>
+                    <ScrollArea className="h-[calc(100vh-200px)]">
+                      <form 
+                        onSubmit={channelForm.handleSubmit(
+                          editingItem ? handleUpdateChannel : handleAddChannel
                         )}
-                      />
-                      <FormField
-                        control={channelForm.control}
-                        name="logo"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-white">Logo URL</FormLabel>
-                            <div className="flex gap-2">
+                        className="space-y-6 py-6 pr-4"
+                      >
+                        <FormField
+                          control={channelForm.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-white">Channel Name</FormLabel>
                               <FormControl>
                                 <input 
                                   type="text"
-                                  className="flex-1 bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
+                                  className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
+                                  placeholder="Enter channel name"
+                                  {...field}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={channelForm.control}
+                          name="logo"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-white">Logo URL</FormLabel>
+                              <FormControl>
+                                <input 
+                                  type="text"
+                                  className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
                                   placeholder="Enter logo URL"
                                   {...field}
                                 />
                               </FormControl>
-                              <button
-                                type="button"
-                                className="px-3 py-2 bg-gray-700 rounded-md"
-                                onClick={() => {}}
-                              >
-                                <Upload size={16} />
-                              </button>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={channelForm.control}
-                        name="url"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-white">Stream URL</FormLabel>
-                            <FormControl>
-                              <input 
-                                type="text"
-                                className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
-                                placeholder="Enter stream URL"
-                                {...field}
-                              />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      <button 
-                        type="submit"
-                        className="w-full bg-firetv-accent py-2 rounded-md hover:bg-firetv-accent/80"
-                      >
-                        {editingItem ? 'Update Channel' : 'Add Channel'}
-                      </button>
-                    </form>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={channelForm.control}
+                          name="url"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-white">Stream URL</FormLabel>
+                              <FormControl>
+                                <input 
+                                  type="text"
+                                  className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
+                                  placeholder="Enter stream URL"
+                                  {...field}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <div className="border-t border-gray-700 pt-4 mt-4">
+                          <h3 className="text-white text-lg mb-4">EPG Information (Optional)</h3>
+                          
+                          <FormField
+                            control={channelForm.control}
+                            name="current_program"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-white">Current Program</FormLabel>
+                                <FormControl>
+                                  <input 
+                                    type="text"
+                                    className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
+                                    placeholder="Current program name"
+                                    {...field}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <div className="grid grid-cols-2 gap-4 mt-4">
+                            <FormField
+                              control={channelForm.control}
+                              name="program_start_time"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-white">Start Time</FormLabel>
+                                  <FormControl>
+                                    <input 
+                                      type="text"
+                                      className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
+                                      placeholder="e.g. 20:00"
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={channelForm.control}
+                              name="program_end_time"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-white">End Time</FormLabel>
+                                  <FormControl>
+                                    <input 
+                                      type="text"
+                                      className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
+                                      placeholder="e.g. 21:00"
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
+                          <FormField
+                            control={channelForm.control}
+                            name="next_program"
+                            render={({ field }) => (
+                              <FormItem className="mt-4">
+                                <FormLabel className="text-white">Next Program</FormLabel>
+                                <FormControl>
+                                  <input 
+                                    type="text"
+                                    className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white"
+                                    placeholder="Next program name"
+                                    {...field}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                        
+                        <button 
+                          type="submit"
+                          className="w-full bg-firetv-accent py-2 rounded-md hover:bg-firetv-accent/80"
+                        >
+                          {editingItem ? 'Update Channel' : 'Add Channel'}
+                        </button>
+                      </form>
+                    </ScrollArea>
                   </SheetContent>
                 </Sheet>
               )}
@@ -502,7 +713,7 @@ const Admin = () => {
                         key={channel.id}
                         className="bg-gray-800 rounded-lg overflow-hidden"
                       >
-                        <div className="aspect-video bg-gray-900 flex items-center justify-center">
+                        <div className="aspect-video bg-gray-900 flex items-center justify-center relative group">
                           {channel.logo ? (
                             <img 
                               src={channel.logo} 
@@ -512,6 +723,21 @@ const Admin = () => {
                           ) : (
                             <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center">
                               <span className="text-xl font-bold">{channel.name.charAt(0)}</span>
+                            </div>
+                          )}
+                          
+                          <div className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <button
+                              onClick={() => openChannelDetails(channel)}
+                              className="p-2 bg-firetv-accent rounded-full hover:bg-firetv-accent/80"
+                            >
+                              <Settings size={20} />
+                            </button>
+                          </div>
+                          
+                          {channel.is_default && (
+                            <div className="absolute top-2 right-2 bg-green-700 px-2 py-1 rounded-full text-xs">
+                              Default
                             </div>
                           )}
                         </div>
@@ -536,7 +762,7 @@ const Admin = () => {
                     ))
                   ) : (
                     <div className="col-span-full text-center text-gray-400 py-8">
-                      No channels in this category. Add your first channel.
+                      No channels in this category. Add your first channel or import an M3U playlist.
                     </div>
                   )}
                 </div>
@@ -545,6 +771,104 @@ const Admin = () => {
           </div>
         </div>
       </div>
+      
+      {/* Channel Details Sheet */}
+      {editingItem && sheetType === 'channelDetails' && (
+        <Sheet open={true} onOpenChange={() => setEditingItem(null)}>
+          <SheetContent className="bg-firetv-dark border-l border-firetv-accent">
+            <SheetHeader>
+              <SheetTitle className="text-white">
+                Channel Details
+              </SheetTitle>
+              <SheetDescription className="text-gray-400">
+                Detailed information about this channel
+              </SheetDescription>
+            </SheetHeader>
+            
+            <div className="py-6 space-y-6">
+              <div className="flex justify-center pb-4">
+                {(editingItem as Channel).logo ? (
+                  <img 
+                    src={(editingItem as Channel).logo!} 
+                    alt={(editingItem as Channel).name} 
+                    className="max-h-32 object-contain"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-gray-700 flex items-center justify-center">
+                    <span className="text-2xl font-bold">{(editingItem as Channel).name.charAt(0)}</span>
+                  </div>
+                )}
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm text-gray-400">Channel Name</h3>
+                  <p className="text-white">{(editingItem as Channel).name}</p>
+                </div>
+                
+                <div>
+                  <h3 className="text-sm text-gray-400">Stream URL</h3>
+                  <p className="text-white break-all">{(editingItem as Channel).url}</p>
+                </div>
+                
+                {(editingItem as Channel).logo && (
+                  <div>
+                    <h3 className="text-sm text-gray-400">Logo URL</h3>
+                    <p className="text-white break-all">{(editingItem as Channel).logo}</p>
+                  </div>
+                )}
+                
+                {(editingItem as Channel).current_program && (
+                  <div>
+                    <h3 className="text-sm text-gray-400">Current Program</h3>
+                    <p className="text-white">{(editingItem as Channel).current_program}</p>
+                  </div>
+                )}
+                
+                {((editingItem as Channel).program_start_time || (editingItem as Channel).program_end_time) && (
+                  <div>
+                    <h3 className="text-sm text-gray-400">Program Time</h3>
+                    <p className="text-white">
+                      {(editingItem as Channel).program_start_time || '?'} - {(editingItem as Channel).program_end_time || '?'}
+                    </p>
+                  </div>
+                )}
+                
+                {(editingItem as Channel).next_program && (
+                  <div>
+                    <h3 className="text-sm text-gray-400">Next Program</h3>
+                    <p className="text-white">{(editingItem as Channel).next_program}</p>
+                  </div>
+                )}
+                
+                <div>
+                  <h3 className="text-sm text-gray-400">Last Updated</h3>
+                  <p className="text-white">
+                    {new Date((editingItem as Channel).last_updated || (editingItem as Channel).created_at).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex space-x-3 pt-4">
+                <button 
+                  onClick={() => {
+                    openChannelSheet(editingItem as Channel);
+                  }}
+                  className="flex-1 bg-firetv-accent py-2 rounded-md hover:bg-firetv-accent/80"
+                >
+                  Edit Channel
+                </button>
+                <button 
+                  onClick={() => handleDeleteChannel(editingItem as Channel)}
+                  className="flex-1 bg-red-600 py-2 rounded-md hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </SheetContent>
+        </Sheet>
+      )}
     </div>
   );
 };

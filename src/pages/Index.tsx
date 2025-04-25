@@ -5,6 +5,7 @@ import CategorySidebar from '@/components/CategorySidebar';
 import ChannelGrid from '@/components/ChannelGrid';
 import VideoPlayer from '@/components/VideoPlayer';
 import { useChannelData } from '@/hooks/useChannelData';
+import { playSoundEffect } from '@/lib/sound-utils';
 import type { Channel } from '@/hooks/useChannelData';
 
 const Index = () => {
@@ -12,15 +13,21 @@ const Index = () => {
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { categories, channels, isLoading: dataLoading } = useChannelData();
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const { categories, channels, isLoading: dataLoading, refetch } = useChannelData();
 
-  const filteredChannels = channels?.filter(channel => 
-    activeCategory === 'all' || channel.category_id === activeCategory
-  ) || [];
+  // Filter channels based on active category and search term
+  const filteredChannels = channels?.filter(channel => {
+    const matchesCategory = activeCategory === 'all' || channel.category_id === activeCategory;
+    const matchesSearch = !searchTerm || 
+      channel.name.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCategory && matchesSearch;
+  }) || [];
 
   const handleCategorySelect = (categoryId: string) => {
     setActiveCategory(categoryId);
     setIsLoading(true);
+    playSoundEffect('select');
     // Simulate loading delay for category change
     setTimeout(() => setIsLoading(false), 800);
   };
@@ -28,28 +35,69 @@ const Index = () => {
   const handleChannelSelect = (channel: Channel) => {
     setSelectedChannel(channel);
     setIsFullScreen(true);
+    playSoundEffect('select');
   };
 
   const handleToggleFullScreen = () => {
+    playSoundEffect('select');
     setIsFullScreen(!isFullScreen);
   };
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    if (term) {
+      playSoundEffect('navigate');
+    }
+  };
+
+  // Auto-refresh data every 24 hours when the app is active
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      refetch();
+    }, 24 * 60 * 60 * 1000); // 24 hours
+    
+    return () => clearInterval(intervalId);
+  }, [refetch]);
 
   // Handle escape key to exit fullscreen
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isFullScreen) {
+        playSoundEffect('back');
         setIsFullScreen(false);
       }
     };
     
+    // Handle keyboard navigation
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle keyboard navigation when not in fullscreen
+      if (isFullScreen) return;
+      
+      switch (e.key) {
+        case 'ArrowUp':
+        case 'ArrowDown':
+        case 'ArrowLeft':
+        case 'ArrowRight':
+          playSoundEffect('navigate');
+          break;
+        default:
+          break;
+      }
+    };
+    
     window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleEscape);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isFullScreen]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-700 to-purple-700 text-white">
       {!isFullScreen && (
-        <Header />
+        <Header onSearch={handleSearch} />
       )}
       <div className={`${isFullScreen ? 'hidden' : 'grid'} grid-cols-12 h-[calc(100vh-64px)]`}>
         <div className="col-span-3 border-r border-white/10">
@@ -66,6 +114,7 @@ const Index = () => {
             onChannelSelect={handleChannelSelect} 
             activeChannelId={selectedChannel?.id || null}
             isLoading={isLoading || dataLoading}
+            searchTerm={searchTerm}
           />
         </div>
         <div className="col-span-3 aspect-square">
