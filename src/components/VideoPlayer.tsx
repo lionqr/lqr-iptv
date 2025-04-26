@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, Maximize, Minimize, PlayCircle, LoaderCircle, AlertTriangle } from 'lucide-react';
+import { Volume2, VolumeX, Maximize, Minimize, PlayCircle, LoaderCircle } from 'lucide-react';
 import { playSoundEffect } from '@/lib/sound-utils';
 import Hls from 'hls.js';
 import type { Tables } from '@/integrations/supabase/types';
@@ -41,6 +41,16 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       hlsRef.current = null;
     }
 
+    const handlePlaybackError = (message: string) => {
+      setIsLoading(false);
+      setIsPlaying(false);
+      
+      toast.dismiss();
+      const errorToast = toast.error(message, {
+        duration: 3000
+      });
+    };
+
     if (Hls.isSupported() && channel.url.includes('.m3u8')) {
       console.log('Loading HLS stream:', channel.url);
       const hls = new Hls({
@@ -63,19 +73,18 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       hls.on(Hls.Events.ERROR, (_, data) => {
         if (data.fatal) {
           console.error('HLS error:', data.type, data.details);
-          setIsLoading(false);
+          
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
-              toast.error('Network error. Attempting to reconnect...');
+              handlePlaybackError('Playback error. Reconnecting...');
               hls.startLoad();
               break;
             case Hls.ErrorTypes.MEDIA_ERROR:
-              toast.error('Media error. Attempting to recover...');
+              handlePlaybackError('Playback error. Attempting to recover...');
               hls.recoverMediaError();
               break;
             default:
-              setIsPlaying(false);
-              toast.error('Playback error. Please try another channel.');
+              handlePlaybackError('Playback error. Please try another channel.');
               hls.destroy();
               break;
           }
@@ -171,9 +180,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       })
       .catch(error => {
         console.error('Error playing video:', error);
+        const errorToast = toast.error('Playback error. Please try another channel.', {
+          duration: 3000
+        });
         setIsPlaying(false);
         setIsLoading(false);
-        toast.error('Unable to play video. Try again or select another channel.');
       });
   };
 
