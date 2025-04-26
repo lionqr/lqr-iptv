@@ -1,19 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Category, Channel } from '@/hooks/useChannelData';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  Folder,
-  FolderOpen, 
-  Edit, 
-  Trash, 
-  Plus,
-  Upload,
-  Settings,
-  RefreshCcw
-} from 'lucide-react';
+import { Plus, Upload, Settings, RefreshCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
   Sheet,
@@ -28,6 +17,8 @@ import { useForm } from 'react-hook-form';
 import { playSoundEffect } from '@/lib/sound-utils';
 import M3UImport from '@/components/M3UImport';
 import { Switch } from '@/components/ui/switch';
+import CategoryList from '@/components/admin/CategoryList';
+import ChannelGrid from '@/components/admin/ChannelGrid';
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -106,7 +97,6 @@ const Admin = () => {
       if (error) throw error;
       setCategories(data || []);
       
-      // Get last update time
       const lastUpdate = data && data.length > 0 
         ? new Date(Math.max(...data.map(c => new Date(c.last_updated || c.created_at).getTime())))
         : null;
@@ -419,13 +409,11 @@ const Admin = () => {
     playSoundEffect('select');
     
     try {
-      // Update last_updated timestamp for all categories
       await supabase
         .from('categories')
         .update({ last_updated: new Date().toISOString() })
         .gt('id', 0);
         
-      // Update last_updated timestamp for all channels
       await supabase
         .from('channels')
         .update({ last_updated: new Date().toISOString() })
@@ -563,7 +551,6 @@ const Admin = () => {
         )}
         
         <div className="grid md:grid-cols-12 gap-6 h-[calc(100vh-180px)] overflow-hidden">
-          {/* Categories Panel */}
           <div className="md:col-span-4 bg-firetv-dark rounded-lg p-6 flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-medium">Categories</h2>
@@ -645,62 +632,16 @@ const Admin = () => {
               </Sheet>
             </div>
             
-            <ScrollArea className="flex-1">
-              <div className="space-y-2 pr-4">
-                {loading ? (
-                  Array(5).fill(0).map((_, i) => (
-                    <div key={i} className="h-12 bg-gray-700/30 rounded-md animate-pulse"></div>
-                  ))
-                ) : categories.length > 0 ? (
-                  categories.map(category => (
-                    <div 
-                      key={category.id}
-                      className={`p-3 rounded-md cursor-pointer flex justify-between items-center ${
-                        selectedCategory?.id === category.id 
-                          ? 'bg-firetv-accent' 
-                          : 'hover:bg-gray-700/30'
-                      }`}
-                    >
-                      <div 
-                        className="flex items-center space-x-2 flex-1"
-                        onClick={() => handleCategorySelect(category)}
-                      >
-                        {selectedCategory?.id === category.id ? 
-                          <FolderOpen size={18} /> : <Folder size={18} />}
-                        <span className="truncate">{category.name}</span>
-                        {category.is_default && (
-                          <span className="text-xs bg-green-700 px-2 py-1 rounded-full">Default</span>
-                        )}
-                        {category.is_visible === false && (
-                          <span className="text-xs bg-gray-700 px-2 py-1 rounded-full">Hidden</span>
-                        )}
-                      </div>
-                      <div className="flex space-x-1">
-                        <button
-                          onClick={() => openCategorySheet(category)}
-                          className="p-1 hover:bg-gray-600 rounded"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCategory(category)}
-                          className="p-1 hover:bg-gray-600 rounded"
-                        >
-                          <Trash size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center text-gray-400 py-4">
-                    No categories found. Add your first category or import an M3U playlist.
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
+            <CategoryList
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onCategorySelect={handleCategorySelect}
+              onEditCategory={(category) => openCategorySheet(category)}
+              onDeleteCategory={handleDeleteCategory}
+              loading={loading}
+            />
           </div>
           
-          {/* Channels Panel */}
           <div className="md:col-span-8 bg-firetv-dark rounded-lg p-6 flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-medium">
@@ -905,78 +846,15 @@ const Admin = () => {
                 Please select a category from the left panel to view its channels.
               </div>
             ) : (
-              <ScrollArea className="flex-1">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pr-4">
-                  {loading ? (
-                    Array(6).fill(0).map((_, i) => (
-                      <div key={i} className="aspect-video bg-gray-700/30 rounded-md animate-pulse"></div>
-                    ))
-                  ) : channels.length > 0 ? (
-                    channels.map(channel => (
-                      <div 
-                        key={channel.id}
-                        className="bg-gray-800 rounded-lg overflow-hidden"
-                      >
-                        <div className="aspect-video bg-gray-900 flex items-center justify-center relative group">
-                          {channel.logo ? (
-                            <img 
-                              src={channel.logo} 
-                              alt={channel.name} 
-                              className="max-w-full max-h-full object-contain"
-                            />
-                          ) : (
-                            <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center">
-                              <span className="text-xl font-bold">{channel.name.charAt(0)}</span>
-                            </div>
-                          )}
-                          
-                          <div className="absolute inset-0 bg-black bg-opacity-60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <button
-                              onClick={() => openChannelDetails(channel)}
-                              className="p-2 bg-firetv-accent rounded-full hover:bg-firetv-accent/80"
-                            >
-                              <Settings size={20} />
-                            </button>
-                          </div>
-                          
-                          {channel.is_default && (
-                            <div className="absolute top-2 right-2 bg-green-700 px-2 py-1 rounded-full text-xs">
-                              Default
-                            </div>
-                          )}
-                          
-                          {channel.is_visible === false && (
-                            <div className="absolute top-2 left-2 bg-gray-700 px-2 py-1 rounded-full text-xs">
-                              Hidden
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-3">
-                          <h3 className="font-medium truncate">{channel.name}</h3>
-                          <div className="flex justify-end space-x-2 mt-2">
-                            <button
-                              onClick={() => openChannelSheet(channel)}
-                              className="p-1 hover:bg-gray-700 rounded"
-                            >
-                              <Edit size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteChannel(channel)}
-                              className="p-1 hover:bg-gray-700 rounded"
-                            >
-                              <Trash size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center text-gray-400 py-4 col-span-3">
-                      No channels found in this category. Add your first channel or import an M3U playlist.
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
+              <ChannelGrid
+                channels={channels}
+                categories={categories}
+                selectedCategory={selectedCategory}
+                onEditChannel={(channel) => openChannelSheet(channel)}
+                onDeleteChannel={handleDeleteChannel}
+                onChannelDetails={openChannelDetails}
+                loading={loading}
+              />
             )}
           </div>
         </div>
