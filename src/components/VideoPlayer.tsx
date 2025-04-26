@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, Maximize, Minimize, PlayCircle, LoaderCircle } from 'lucide-react';
+
+import React, { useEffect } from 'react';
 import { playSoundEffect } from '@/lib/sound-utils';
-import Hls from 'hls.js';
 import type { Tables } from '@/integrations/supabase/types';
-import { toast } from 'sonner';
+import LoadingOverlay from './video-player/LoadingOverlay';
+import VideoControls from './video-player/VideoControls';
+import { useVideoPlayer } from './video-player/useVideoPlayer';
 
 type Channel = Tables<'channels'>;
 
@@ -20,98 +21,20 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   onExitFullScreen,
   onToggleFullScreen 
 }) => {
-  const [showControls, setShowControls] = useState(true);
-  const [volume, setVolume] = useState(50);
-  const [isMuted, setIsMuted] = useState(false);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const hlsRef = useRef<Hls | null>(null);
-  const controlsTimerRef = useRef<number | null>(null);
-  
-  useEffect(() => {
-    if (!channel?.url || !videoRef.current) return;
-
-    setIsLoading(true);
-    setIsPlaying(false);
-    const video = videoRef.current;
-    
-    if (hlsRef.current) {
-      hlsRef.current.destroy();
-      hlsRef.current = null;
-    }
-
-    const handlePlaybackError = (message: string) => {
-      setIsLoading(false);
-      setIsPlaying(false);
-      
-      toast.dismiss();
-      const errorToast = toast.error(message, {
-        duration: 3000
-      });
-    };
-
-    if (Hls.isSupported() && channel.url.includes('.m3u8')) {
-      console.log('Loading HLS stream:', channel.url);
-      const hls = new Hls({
-        enableWorker: true,
-        lowLatencyMode: true,
-      });
-      
-      hls.attachMedia(video);
-      
-      hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-        console.log('HLS media attached, loading source');
-        hls.loadSource(channel.url);
-      });
-      
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        console.log('HLS manifest parsed, playing video');
-        handlePlayVideo();
-      });
-      
-      hls.on(Hls.Events.ERROR, (_, data) => {
-        if (data.fatal) {
-          console.error('HLS error:', data.type, data.details);
-          
-          switch (data.type) {
-            case Hls.ErrorTypes.NETWORK_ERROR:
-              handlePlaybackError('Playback error. Reconnecting...');
-              hls.startLoad();
-              break;
-            case Hls.ErrorTypes.MEDIA_ERROR:
-              handlePlaybackError('Playback error. Attempting to recover...');
-              hls.recoverMediaError();
-              break;
-            default:
-              handlePlaybackError('Playback error. Please try another channel.');
-              hls.destroy();
-              break;
-          }
-        }
-      });
-      
-      hlsRef.current = hls;
-    } else {
-      console.log('Loading direct stream:', channel.url);
-      video.src = channel.url;
-      handlePlayVideo();
-    }
-
-    return () => {
-      if (hlsRef.current) {
-        console.log('Cleaning up HLS instance');
-        hlsRef.current.destroy();
-        hlsRef.current = null;
-      }
-    };
-  }, [channel]);
-
-  useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.volume = isMuted ? 0 : volume / 100;
-    }
-  }, [volume, isMuted]);
+  const {
+    showControls,
+    setShowControls,
+    volume,
+    isMuted,
+    isPlaying,
+    isLoading,
+    videoRef,
+    controlsTimerRef,
+    handlePlayVideo,
+    handlePlayPause,
+    handleVolumeChange,
+    setIsMuted,
+  } = useVideoPlayer(channel);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -154,12 +77,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         clearTimeout(controlsTimerRef.current);
       }
     };
-  }, [isFullScreen, isPlaying]);
-
-  const handleVolumeChange = (newVolume: number) => {
-    setVolume(newVolume);
-    setIsMuted(false);
-  };
+  }, [isFullScreen, isPlaying, controlsTimerRef, setShowControls]);
 
   const handleVideoClick = () => {
     if (!isPlaying) {
@@ -167,35 +85,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     } else {
       playSoundEffect('select');
       onToggleFullScreen();
-    }
-  };
-
-  const handlePlayVideo = () => {
-    if (!videoRef.current) return;
-    
-    videoRef.current.play()
-      .then(() => {
-        setIsPlaying(true);
-        setIsLoading(false);
-      })
-      .catch(error => {
-        console.error('Error playing video:', error);
-        const errorToast = toast.error('Playback error. Please try another channel.', {
-          duration: 3000
-        });
-        setIsPlaying(false);
-        setIsLoading(false);
-      });
-  };
-
-  const handlePlayPause = () => {
-    if (!videoRef.current) return;
-    
-    if (videoRef.current.paused) {
-      handlePlayVideo();
-    } else {
-      videoRef.current.pause();
-      setIsPlaying(false);
     }
   };
 
@@ -239,53 +128,20 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             poster={channel.logo || undefined}
           />
           
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center z-10 bg-black/60">
-              <LoaderCircle className="w-16 h-16 text-blue-600 animate-spin" />
-            </div>
-          )}
+          {isLoading && <LoadingOverlay />}
           
           {showControls && (
-            <div className={`absolute bottom-0 left-0 right-0 p-4 
-              ${isFullScreen ? 'bg-gradient-to-t from-black to-transparent' : 'bg-gradient-to-t from-black/70 to-transparent'}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <button 
-                    onClick={handlePlayPause}
-                    className="text-white p-2 rounded-full hover:bg-white/20"
-                  >
-                    <PlayCircle size={24} />
-                  </button>
-                  
-                  <button 
-                    onClick={() => setIsMuted(!isMuted)}
-                    className="text-white p-2 rounded-full hover:bg-white/20"
-                  >
-                    {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
-                  </button>
-                  
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={volume}
-                    onChange={(e) => handleVolumeChange(Number(e.target.value))}
-                    className="w-24"
-                  />
-                  
-                  <div className="text-white text-sm ml-2">
-                    {channel.name}
-                  </div>
-                </div>
-                
-                <button
-                  onClick={isFullScreen ? exitFullScreen : enterFullScreen}
-                  className="text-white p-2 rounded-full hover:bg-white/20"
-                >
-                  {isFullScreen ? <Minimize size={20} /> : <Maximize size={20} />}
-                </button>
-              </div>
-            </div>
+            <VideoControls
+              isPlaying={isPlaying}
+              isMuted={isMuted}
+              volume={volume}
+              channelName={channel.name}
+              isFullScreen={isFullScreen}
+              onPlayPause={handlePlayPause}
+              onMuteToggle={() => setIsMuted(!isMuted)}
+              onVolumeChange={handleVolumeChange}
+              onFullScreenToggle={isFullScreen ? exitFullScreen : enterFullScreen}
+            />
           )}
         </div>
       </div>
