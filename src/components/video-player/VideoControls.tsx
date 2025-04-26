@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Volume2, VolumeX, Maximize, Minimize, PlayCircle } from 'lucide-react';
+import { PlayCircle, Volume2, VolumeX, Maximize, Minimize } from 'lucide-react';
 
 interface VideoControlsProps {
   isPlaying: boolean;
