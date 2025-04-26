@@ -93,6 +93,57 @@ export const useVideoPlayer = (channel: Channel | null) => {
     }
   }, [volume, isMuted]);
 
+  // Handle FireTV keypress events for video controls
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!videoRef.current) return;
+      
+      switch (e.key) {
+        case 'Enter':
+        case ' ':  // Space bar
+          handlePlayPause();
+          break;
+        case 'ArrowUp':
+          // Increase volume
+          setVolume(prev => Math.min(100, prev + 5));
+          setIsMuted(false);
+          break;
+        case 'ArrowDown':
+          // Decrease volume
+          setVolume(prev => Math.max(0, prev - 5));
+          break;
+        case 'ArrowLeft':
+          // Show controls when navigation is active
+          setShowControls(true);
+          resetControlsTimer();
+          break;
+        case 'ArrowRight':
+          // Show controls when navigation is active
+          setShowControls(true);
+          resetControlsTimer();
+          break;
+        case 'm':
+        case 'M':
+          // Mute toggle
+          setIsMuted(!isMuted);
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isMuted]);
+
+  const resetControlsTimer = () => {
+    if (controlsTimerRef.current) {
+      clearTimeout(controlsTimerRef.current);
+    }
+    
+    controlsTimerRef.current = window.setTimeout(() => {
+      setShowControls(false);
+    }, 3000);
+  };
+
   const handlePlayVideo = () => {
     if (!videoRef.current) return;
     
@@ -100,6 +151,10 @@ export const useVideoPlayer = (channel: Channel | null) => {
       .then(() => {
         setIsPlaying(true);
         setIsLoading(false);
+        
+        // Show controls temporarily when video starts playing
+        setShowControls(true);
+        resetControlsTimer();
       })
       .catch(error => {
         console.error('Error playing video:', error);
@@ -119,6 +174,8 @@ export const useVideoPlayer = (channel: Channel | null) => {
     } else {
       videoRef.current.pause();
       setIsPlaying(false);
+      // Always show controls when video is paused
+      setShowControls(true);
     }
   };
 
@@ -140,5 +197,6 @@ export const useVideoPlayer = (channel: Channel | null) => {
     handlePlayPause,
     handleVolumeChange,
     setIsMuted,
+    resetControlsTimer,
   };
 };

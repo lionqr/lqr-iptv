@@ -34,6 +34,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     handlePlayPause,
     handleVolumeChange,
     setIsMuted,
+    resetControlsTimer,
   } = useVideoPlayer(channel);
 
   useEffect(() => {
@@ -52,20 +53,15 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     const showControlsTemporarily = () => {
       setShowControls(true);
-      
-      if (controlsTimerRef.current) {
-        clearTimeout(controlsTimerRef.current);
-      }
-      
-      controlsTimerRef.current = window.setTimeout(() => {
-        setShowControls(false);
-      }, 3000);
+      resetControlsTimer();
     };
     
     const handleMouseMove = () => showControlsTemporarily();
+    const handleTouchStart = () => showControlsTemporarily();
     
     if (isFullScreen) {
       document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('touchstart', handleTouchStart);
       showControlsTemporarily();
     } else {
       setShowControls(true);
@@ -73,12 +69,14 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     
     return () => {
       document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('touchstart', handleTouchStart);
       if (controlsTimerRef.current) {
         clearTimeout(controlsTimerRef.current);
       }
     };
-  }, [isFullScreen, isPlaying, controlsTimerRef, setShowControls]);
+  }, [isFullScreen, isPlaying, controlsTimerRef, setShowControls, resetControlsTimer]);
 
+  // First click plays the video, second click toggles fullscreen
   const handleVideoClick = () => {
     if (!isPlaying) {
       handlePlayVideo();
