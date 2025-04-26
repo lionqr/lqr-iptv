@@ -57,21 +57,13 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         console.log('HLS manifest parsed, playing video');
-        video.play()
-          .then(() => {
-            setIsPlaying(true);
-            setIsLoading(false);
-          })
-          .catch(error => {
-            console.error('Error playing video:', error);
-            toast.error('Unable to play video. Try again or select another channel.');
-            setIsLoading(false);
-          });
+        handlePlayVideo();
       });
       
       hls.on(Hls.Events.ERROR, (_, data) => {
         if (data.fatal) {
           console.error('HLS error:', data.type, data.details);
+          setIsLoading(false);
           switch (data.type) {
             case Hls.ErrorTypes.NETWORK_ERROR:
               toast.error('Network error. Attempting to reconnect...');
@@ -82,9 +74,9 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
               hls.recoverMediaError();
               break;
             default:
+              setIsPlaying(false);
               toast.error('Playback error. Please try another channel.');
               hls.destroy();
-              setIsLoading(false);
               break;
           }
         }
@@ -94,16 +86,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     } else {
       console.log('Loading direct stream:', channel.url);
       video.src = channel.url;
-      video.play()
-        .then(() => {
-          setIsPlaying(true);
-          setIsLoading(false);
-        })
-        .catch(error => {
-          console.error('Error playing video:', error);
-          toast.error('Unable to play video. Try again or select another channel.');
-          setIsLoading(false);
-        });
+      handlePlayVideo();
     }
 
     return () => {
@@ -169,20 +152,36 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setIsMuted(false);
   };
 
-  const handleVideoClick = async () => {
-    if (isPlaying) {
+  const handleVideoClick = () => {
+    if (!isPlaying) {
+      handlePlayVideo();
+    } else {
       playSoundEffect('select');
       onToggleFullScreen();
     }
+  };
+
+  const handlePlayVideo = () => {
+    if (!videoRef.current) return;
+    
+    videoRef.current.play()
+      .then(() => {
+        setIsPlaying(true);
+        setIsLoading(false);
+      })
+      .catch(error => {
+        console.error('Error playing video:', error);
+        setIsPlaying(false);
+        setIsLoading(false);
+        toast.error('Unable to play video. Try again or select another channel.');
+      });
   };
 
   const handlePlayPause = () => {
     if (!videoRef.current) return;
     
     if (videoRef.current.paused) {
-      videoRef.current.play()
-        .then(() => setIsPlaying(true))
-        .catch(console.error);
+      handlePlayVideo();
     } else {
       videoRef.current.pause();
       setIsPlaying(false);
@@ -221,12 +220,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     <div className={`relative ${isFullScreen ? 'fixed inset-0 z-50 bg-black' : 'aspect-video'}`}>
       <div className="relative h-full w-full">
         <div className="absolute inset-0 bg-firetv-dark flex items-center justify-center overflow-hidden">
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center z-10 bg-black/60">
-              <LoaderCircle className="w-16 h-16 text-blue-600 animate-spin" />
-            </div>
-          )}
-          
           <video
             ref={videoRef}
             onClick={handleVideoClick}
@@ -234,6 +227,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             playsInline
             poster={channel.logo || undefined}
           />
+          
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center z-10 bg-black/60">
+              <LoaderCircle className="w-16 h-16 text-blue-600 animate-spin" />
+            </div>
+          )}
           
           {showControls && (
             <div className={`absolute bottom-0 left-0 right-0 p-4 
