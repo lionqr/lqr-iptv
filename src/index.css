@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -96,28 +95,23 @@
 
 @layer components {
   .category-item {
-    @apply cursor-pointer p-3 mb-2 rounded-lg transition-all duration-300 hover:bg-firetv-accent hover:text-firetv-text;
+    @apply cursor-pointer p-4 mb-2 rounded-lg transition-all duration-300 hover:bg-firetv-accent hover:text-firetv-text text-lg;
   }
 
   .category-item.active {
-    @apply bg-firetv-accent text-firetv-text;
+    @apply bg-firetv-accent text-firetv-text scale-105 shadow-lg;
   }
 
   .channel-item {
-    @apply relative cursor-pointer transition-all duration-300 rounded-lg overflow-hidden;
+    @apply relative cursor-pointer transition-all duration-300 rounded-lg overflow-hidden p-4;
   }
 
-  .channel-item:hover, .channel-item:focus {
-    @apply transform scale-105 shadow-lg;
-    box-shadow: 0 0 15px theme('colors.firetv.accent');
-  }
-
-  .channel-item.active {
-    @apply ring-2 ring-firetv-highlight;
+  .channel-item:hover, .channel-item:focus, .channel-item.active {
+    @apply transform scale-105 shadow-lg bg-firetv-accent;
   }
 
   .channel-item .channel-info {
-    @apply absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-firetv-black to-transparent;
+    @apply absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-firetv-black to-transparent text-lg;
   }
 }
 

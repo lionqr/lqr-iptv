@@ -47,9 +47,9 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-1 p-1">
+      <div className="grid grid-cols-1 gap-2 p-4">
         {Array(6).fill(0).map((_, i) => (
-          <Skeleton key={i} className="h-16 w-full" />
+          <Skeleton key={i} className="h-20 w-full" />
         ))}
       </div>
     );
@@ -58,36 +58,36 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
   if (visibleChannels.length === 0) {
     return (
       <div className="flex-1 h-full flex items-center justify-center">
-        <div className="text-white/60 text-center">
-          {searchTerm ? `No channels found for "${searchTerm}"` : 'No channels available. Admin needs to add channels.'}
+        <div className="text-white/60 text-center text-xl">
+          {searchTerm ? `No channels found for "${searchTerm}"` : 'No channels available'}
         </div>
       </div>
     );
   }
 
   return (
-    <ScrollArea className="h-[calc(100vh-64px)] w-full">
-      <div className="grid grid-cols-1 gap-1 p-1">
+    <ScrollArea className="h-full w-full">
+      <div className="grid grid-cols-1 gap-2 p-4">
         {visibleChannels.map((channel) => (
           <button
             key={channel.id}
             ref={activeChannelId === channel.id ? activeChannelRef : null}
             onClick={() => handleChannelClick(channel)}
-            className={`w-full flex items-center p-4 transition-colors duration-200
+            className={`w-full flex items-center p-6 rounded-lg transition-colors duration-200 text-lg
               ${activeChannelId === channel.id 
-                ? 'bg-blue-600' 
+                ? 'bg-blue-600 scale-105 shadow-lg' 
                 : 'hover:bg-blue-600/30'}`}
           >
-            <div className="h-10 w-10 rounded-full overflow-hidden mr-4">
+            <div className="h-16 w-16 rounded-lg overflow-hidden mr-6">
               {channel.logo ? (
                 <img src={channel.logo} alt={channel.name} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full bg-blue-500 flex items-center justify-center">
+                <div className="w-full h-full bg-blue-500 flex items-center justify-center text-2xl">
                   {channel.name.charAt(0)}
                 </div>
               )}
             </div>
-            <span className="font-medium">{channel.name}</span>
+            <span className="font-medium text-xl">{channel.name}</span>
           </button>
         ))}
       </div>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
 import CategorySidebar from '@/components/CategorySidebar';
@@ -60,7 +59,24 @@ const Index = () => {
     return () => clearInterval(intervalId);
   }, [refetch]);
 
-  // Handle keyboard navigation for TV-style interface
+  // Auto-select first category and channel on load
+  useEffect(() => {
+    if (categories?.length && channels?.length) {
+      const firstCategory = categories[0];
+      setActiveCategory(firstCategory.id);
+      
+      const firstVisibleChannel = channels.find(channel => 
+        (channel.category_id === firstCategory.id || firstCategory.id === 'all') && 
+        channel.is_visible !== false
+      );
+      
+      if (firstVisibleChannel) {
+        setSelectedChannel(firstVisibleChannel);
+      }
+    }
+  }, [categories, channels]);
+
+  // Enhanced keyboard navigation
   useEffect(() => {
     const handleKeyboardNavigation = (e: KeyboardEvent) => {
       if (isFullScreen && e.key === 'Escape') {
@@ -69,15 +85,38 @@ const Index = () => {
         return;
       }
 
-      // Only handle keyboard navigation when not in fullscreen
-      if (isFullScreen) return;
-      
+      // Calculate current indices
+      const visibleChannels = filteredChannels.filter(c => c.is_visible !== false);
+      const visibleCategories = categories?.filter(c => c.is_visible !== false) || [];
+      const currentChannelIndex = visibleChannels.findIndex(c => c.id === selectedChannel?.id);
+      const currentCategoryIndex = visibleCategories.findIndex(c => c.id === activeCategory);
+
       switch (e.key) {
         case 'ArrowUp':
+          if (currentChannelIndex > 0) {
+            setSelectedChannel(visibleChannels[currentChannelIndex - 1]);
+            playSoundEffect('navigate');
+          }
+          break;
         case 'ArrowDown':
+          if (currentChannelIndex < visibleChannels.length - 1) {
+            setSelectedChannel(visibleChannels[currentChannelIndex + 1]);
+            playSoundEffect('navigate');
+          }
+          break;
         case 'ArrowLeft':
+          if (currentCategoryIndex > 0) {
+            const newCategory = visibleCategories[currentCategoryIndex - 1];
+            setActiveCategory(newCategory.id);
+            playSoundEffect('navigate');
+          }
+          break;
         case 'ArrowRight':
-          playSoundEffect('navigate');
+          if (currentCategoryIndex < visibleCategories.length - 1) {
+            const newCategory = visibleCategories[currentCategoryIndex + 1];
+            setActiveCategory(newCategory.id);
+            playSoundEffect('navigate');
+          }
           break;
         case 'Enter':
           if (selectedChannel) {
@@ -85,22 +124,20 @@ const Index = () => {
             playSoundEffect('select');
           }
           break;
-        default:
-          break;
       }
     };
     
     window.addEventListener('keydown', handleKeyboardNavigation);
     return () => window.removeEventListener('keydown', handleKeyboardNavigation);
-  }, [isFullScreen, selectedChannel]);
+  }, [isFullScreen, selectedChannel, categories, filteredChannels, activeCategory]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-700 to-purple-700 text-white overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-blue-700 to-purple-700 text-white">
       {!isFullScreen && (
         <Header onSearch={handleSearch} />
       )}
-      <div className={`${isFullScreen ? 'hidden' : 'grid'} grid-cols-12 flex-1 overflow-hidden`}>
-        <div className="col-span-3 border-r border-white/10 overflow-hidden">
+      <div className={`${isFullScreen ? 'hidden' : 'grid'} grid-cols-12 gap-0 h-[calc(100vh-64px)]`}>
+        <div className="col-span-3 border-r border-white/10">
           <CategorySidebar 
             categories={categories?.filter(cat => cat.is_visible !== false) || []}
             activeCategory={activeCategory} 
@@ -109,7 +146,7 @@ const Index = () => {
             allChannels={channels || []}
           />
         </div>
-        <div className="col-span-6 border-r border-white/10 overflow-hidden">
+        <div className="col-span-5 border-r border-white/10">
           <ChannelGrid 
             channels={filteredChannels} 
             onChannelSelect={handleChannelSelect} 
@@ -118,7 +155,7 @@ const Index = () => {
             searchTerm={searchTerm}
           />
         </div>
-        <div className="col-span-3">
+        <div className="col-span-4">
           <VideoPlayer 
             channel={selectedChannel}
             isFullScreen={isFullScreen}
