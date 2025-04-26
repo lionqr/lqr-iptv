@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { Volume2, VolumeX, Maximize, Minimize, PlayCircle } from 'lucide-react';
+import { Volume2, VolumeX, Maximize, Minimize, PlayCircle, LoaderCircle, AlertTriangle } from 'lucide-react';
 import { playSoundEffect } from '@/lib/sound-utils';
 import Hls from 'hls.js';
 import type { Tables } from '@/integrations/supabase/types';
@@ -30,7 +29,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const hlsRef = useRef<Hls | null>(null);
   const controlsTimerRef = useRef<number | null>(null);
   
-  // Initialize HLS when channel changes
   useEffect(() => {
     if (!channel?.url || !videoRef.current) return;
 
@@ -38,13 +36,11 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     setIsPlaying(false);
     const video = videoRef.current;
     
-    // Cleanup previous HLS instance
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
     }
 
-    // Handle HLS streams
     if (Hls.isSupported() && channel.url.includes('.m3u8')) {
       console.log('Loading HLS stream:', channel.url);
       const hls = new Hls({
@@ -96,7 +92,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
       
       hlsRef.current = hls;
     } else {
-      // Fallback for non-HLS streams
       console.log('Loading direct stream:', channel.url);
       video.src = channel.url;
       video.play()
@@ -120,14 +115,12 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     };
   }, [channel]);
 
-  // Update video volume
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.volume = isMuted ? 0 : volume / 100;
     }
   }, [volume, isMuted]);
 
-  // Handle fullscreen changes
   useEffect(() => {
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement && isFullScreen) {
@@ -139,7 +132,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, [isFullScreen, onExitFullScreen]);
 
-  // Auto-hide controls
   useEffect(() => {
     if (!isPlaying) return;
 
@@ -178,8 +170,10 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   const handleVideoClick = async () => {
-    playSoundEffect('select');
-    onToggleFullScreen();
+    if (isPlaying) {
+      playSoundEffect('select');
+      onToggleFullScreen();
+    }
   };
 
   const handlePlayPause = () => {
@@ -229,7 +223,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
         <div className="absolute inset-0 bg-firetv-dark flex items-center justify-center overflow-hidden">
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center z-10 bg-black/60">
-              <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <LoaderCircle className="w-16 h-16 text-blue-600 animate-spin" />
             </div>
           )}
           
@@ -241,7 +235,6 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({
             poster={channel.logo || undefined}
           />
           
-          {/* Controls overlay */}
           {showControls && (
             <div className={`absolute bottom-0 left-0 right-0 p-4 
               ${isFullScreen ? 'bg-gradient-to-t from-black to-transparent' : 'bg-gradient-to-t from-black/70 to-transparent'}`}>
