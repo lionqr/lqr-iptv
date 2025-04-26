@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -961,4 +962,27 @@ const Admin = () => {
                             </button>
                             <button
                               onClick={() => handleDeleteChannel(channel)}
-                              className="p-1 hover:bg-
+                              className="p-1 hover:bg-gray-700 rounded"
+                            >
+                              <Trash size={16} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-gray-400 py-4 col-span-3">
+                      No channels found in this category. Add your first channel or import an M3U playlist.
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Admin;
