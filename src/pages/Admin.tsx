@@ -19,6 +19,7 @@ import M3UImport from '@/components/M3UImport';
 import { Switch } from '@/components/ui/switch';
 import CategoryList from '@/components/admin/CategoryList';
 import ChannelGrid from '@/components/admin/ChannelGrid';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const Admin = () => {
   const navigate = useNavigate();
