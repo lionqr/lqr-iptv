@@ -15,7 +15,6 @@ const Index = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const { categories, channels, isLoading: dataLoading, refetch } = useChannelData();
 
-  // Filter channels based on active category and search term
   const filteredChannels = channels?.filter(channel => {
     const matchesCategory = activeCategory === 'all' || channel.category_id === activeCategory;
     const matchesSearch = !searchTerm || 
@@ -28,13 +27,14 @@ const Index = () => {
     setActiveCategory(categoryId);
     setIsLoading(true);
     playSoundEffect('select');
-    // Simulate loading delay for category change
     setTimeout(() => setIsLoading(false), 400);
   }, []);
 
-  const handleChannelSelect = useCallback((channel: Channel) => {
+  const handleChannelSelect = useCallback((channel: Channel, forceFullscreen = false) => {
     setSelectedChannel(channel);
-    setIsFullScreen(true);
+    if (forceFullscreen) {
+      setIsFullScreen(true);
+    }
     playSoundEffect('select');
   }, []);
 
@@ -50,16 +50,13 @@ const Index = () => {
     }
   }, []);
 
-  // Auto-refresh data every 24 hours when the app is active
   useEffect(() => {
     const intervalId = setInterval(() => {
       refetch();
-    }, 24 * 60 * 60 * 1000); // 24 hours
-    
+    }, 24 * 60 * 60 * 1000);
     return () => clearInterval(intervalId);
   }, [refetch]);
 
-  // Auto-select first category and channel on load
   useEffect(() => {
     if (categories?.length && channels?.length) {
       const firstCategory = categories[0];
@@ -76,7 +73,6 @@ const Index = () => {
     }
   }, [categories, channels]);
 
-  // Enhanced keyboard navigation
   useEffect(() => {
     const handleKeyboardNavigation = (e: KeyboardEvent) => {
       if (isFullScreen && e.key === 'Escape') {
@@ -85,7 +81,6 @@ const Index = () => {
         return;
       }
 
-      // Calculate current indices
       const visibleChannels = filteredChannels.filter(c => c.is_visible !== false);
       const visibleCategories = categories?.filter(c => c.is_visible !== false) || [];
       const currentChannelIndex = visibleChannels.findIndex(c => c.id === selectedChannel?.id);

@@ -14,7 +14,7 @@ interface Channel {
 
 interface ChannelGridProps {
   channels: Channel[];
-  onChannelSelect: (channel: Channel) => void;
+  onChannelSelect: (channel: Channel, forceFullscreen?: boolean) => void;
   activeChannelId: string | null;
   isLoading?: boolean;
   searchTerm?: string;
@@ -40,7 +40,12 @@ const ChannelGrid: React.FC<ChannelGridProps> = ({
 
   const handleChannelClick = (channel: Channel) => {
     playSoundEffect('select');
-    onChannelSelect(channel);
+    // If clicking the active channel, force fullscreen
+    if (channel.id === activeChannelId) {
+      onChannelSelect(channel, true);
+    } else {
+      onChannelSelect(channel, false);
+    }
   };
 
   const visibleChannels = channels.filter(channel => channel.is_visible !== false);
