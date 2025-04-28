@@ -127,7 +127,7 @@ const Index = () => {
   }, [isFullScreen, selectedChannel, categories, filteredChannels, activeCategory]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-700 to-purple-700 text-white">
+    <div className="h-screen overflow-hidden bg-gradient-to-br from-blue-700 to-purple-700 text-white">
       {!isFullScreen && (
         <Header onSearch={handleSearch} />
       )}
